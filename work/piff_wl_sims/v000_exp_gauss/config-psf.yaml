@@ -9,6 +9,10 @@ gal:
     type: G1G2
     g1: 0.0
     g2: 0.0
+  shift:
+    type: XY
+    x: 0.0
+    y: 0.0
 
 output:
   file_name: psfs.fits
