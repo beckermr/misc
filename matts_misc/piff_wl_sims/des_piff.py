@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+import os
 
 import galsim
 import galsim.config
@@ -27,7 +28,8 @@ class DES_Piff(object):
 
     def __init__(self, file_name):
         self.file_name = file_name
-        self._piff = piff.read(file_name)
+        self._piff = piff.read(
+            os.path.expanduser(os.path.expandvars(file_name)))
 
     def getPiff(self):
         return self._piff
