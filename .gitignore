@@ -102,3 +102,14 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# data
+*.fit
+*.fits
+*.fits.fz
+*.fit.fz
+*.txt
+*.dat
+*.pkl
+*.desc
+*.desc.submitted
