@@ -18,14 +18,14 @@ gal:
   type: Exponential
   half_light_radius: 0.5
   flux: 64000
-  shear:
-    type: G1G2
-    g1: 0.02
-    g2: 0.0
   shift:
     type: XY
     x: {type: Random, min: -0.263, max: 0.263}
     y: {type: Random, min: -0.263, max: 0.263}
+  shear:
+    type: G1G2
+    g1: 0.02
+    g2: 0.0
 
 output:
   file_name: gals.fits
