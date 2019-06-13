@@ -30,8 +30,12 @@ c       : -0.000000 +/- 0.000000
 ## v002_exp_piff_interp_diff
 
 This simulation is the same as `v001_exp_piff` but the real-space
-interpolant differs,
+interpolant differs between metacal and that used in galsim to render
+the objects.
 
 ```
-
+s2n: 10
+# of sims: 995329
+m       : 0.000275 +/- 0.000003
+c       : -0.000000 +/- 0.000000
 ```
