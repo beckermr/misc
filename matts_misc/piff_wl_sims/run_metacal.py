@@ -67,7 +67,7 @@ CONFIG = {
 }
 
 
-def run_metacal(image, psf_image, stamp_size, noise, rng):
+def run_metacal(image, psf_image, stamp_size, psf_stamp_size, noise, rng):
     """Run metacal on an image composed of stamps w/ constant noise.
 
     Parameters
@@ -78,6 +78,8 @@ def run_metacal(image, psf_image, stamp_size, noise, rng):
         The image of PSF images.
     stamp_size : int
         The size of each stamp.
+    psf_stamp_size : int
+        The size of each PSF stamp.
     noise : float
         The noise level in the image.
     rng : np.random.RandomState
@@ -91,10 +93,26 @@ def run_metacal(image, psf_image, stamp_size, noise, rng):
     nx = image.shape[1] // stamp_size
     ny = image.shape[0] // stamp_size
     cen = (stamp_size - 1) / 2
+    psf_cen = (psf_stamp_size - 1)/2
 
     def _gen_data():
         for yind in range(ny):
             for xind in range(nx):
+                psf_im = psf_image[
+                    yind*psf_stamp_size:(yind+1)*psf_stamp_size,
+                    xind*psf_stamp_size:(xind+1)*psf_stamp_size]
+                psf_noise = np.sqrt(np.sum(psf_im**2)) / 500
+                wgt = 0.0 * psf_im + 1.0 / psf_noise**2
+                psf_jac = ngmix.DiagonalJacobian(
+                    scale=0.263,
+                    x=psf_cen,
+                    y=psf_cen)
+                psf_obs = ngmix.Observation(
+                    image=psf_im,
+                    weight=wgt,
+                    jacobian=psf_jac
+                )
+
                 im = image[
                     yind*stamp_size:(yind+1)*stamp_size,
                     xind*stamp_size:(xind+1)*stamp_size]
@@ -102,19 +120,6 @@ def run_metacal(image, psf_image, stamp_size, noise, rng):
                     scale=0.263,
                     x=cen,
                     y=cen)
-
-                psf_im = psf_image[
-                    yind*stamp_size:(yind+1)*stamp_size,
-                    xind*stamp_size:(xind+1)*stamp_size]
-                psf_noise = np.sqrt(np.sum(psf_im**2)) / 500
-                wgt = 0.0 * im + 1.0 / psf_noise**2
-
-                psf_obs = ngmix.Observation(
-                    image=psf_im,
-                    weight=wgt,
-                    jacobian=jac
-                )
-
                 wgt = 0.0 * im + 1.0 / noise**2
                 nse = rng.normal(size=im.shape) * noise
                 obs = ngmix.Observation(

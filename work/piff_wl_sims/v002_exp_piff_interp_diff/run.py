@@ -9,10 +9,12 @@ from matts_misc.piff_wl_sims.run_metacal import run_metacal
 image = fitsio.read(sys.argv[1])
 psf_image = fitsio.read(sys.argv[2])
 stamp_size = 33
+# compute the PSF stamp size assuming the same number of stamps
+psf_stamp_size = psf_image.shape[0] // (image.shape[0] // stamp_size)
 noise = 1
 rng = np.random.RandomState(seed=int(sys.argv[3]))
 
-res = run_metacal(image, psf_image, stamp_size, noise, rng)
+res = run_metacal(image, psf_image, stamp_size, psf_stamp_size, noise, rng)
 
 
 def _mask(cat):
