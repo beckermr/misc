@@ -21,5 +21,17 @@ c       : -0.000000 +/- 0.000000
 This simulation is the same as `v000_exp_gauss` but with Piff PSFs.
 
 ```
+s2n: 10
+# of sims: 995184
+m       : 0.000250 +/- 0.000004
+c       : -0.000000 +/- 0.000000
+```
+
+## v002_exp_piff_interp_diff
+
+This simulation is the same as `v001_exp_piff` but the real-space
+interpolant differs,
+
+```
 
 ```

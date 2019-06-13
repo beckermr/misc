@@ -34,7 +34,8 @@ class DES_Piff(object):
     def getPiff(self):
         return self._piff
 
-    def getPSF(self, image_pos, wcs, smooth=False, gsparams=None):
+    def getPSF(self, image_pos, wcs, smooth=False,
+               x_interpolant='lanczos15', gsparams=None):
         """Get an image of the PSF at the given location.
 
         Parameters
@@ -45,6 +46,8 @@ class DES_Piff(object):
             The WCS to use to draw the PSF.
         smooth : bool
             If True, return a smoothed version of the PSF.
+        x_interpolant : str, optional
+            The interpolant to use.
         gsparams : galsim.GSParams, optional
             Ootional galsim configuration data to pass along.
 
@@ -54,11 +57,12 @@ class DES_Piff(object):
             The PSF at the image position.
         """
         if smooth:
-            return self._make_smooth_psf_obj(image_pos, wcs, gsparams)
+            return self._make_smooth_psf_obj(
+                image_pos, wcs, x_interpolant, gsparams)
         else:
-            return self._make_psf_obj(image_pos, wcs, gsparams)
+            return self._make_psf_obj(image_pos, wcs, x_interpolant, gsparams)
 
-    def _make_smooth_psf_obj(self, image_pos, wcs, gsparams):
+    def _make_smooth_psf_obj(self, image_pos, wcs, x_interpolant, gsparams):
         import ngmix
         from ngmix.bootstrap import EMRunner
 
@@ -82,7 +86,7 @@ class DES_Piff(object):
             psf,
             wcs=swcs,
             gsparams=gsparams,
-            x_interpolant='lanczos15'
+            x_interpolant=x_interpolant
         ).withFlux(
             1.0
         )
@@ -117,7 +121,7 @@ class DES_Piff(object):
         # finally return a galsim object
         return fitter.get_gmix().make_galsim_object()
 
-    def _make_psf_obj(self, image_pos, wcs, gsparams):
+    def _make_psf_obj(self, image_pos, wcs, x_interpolant, gsparams):
         image = galsim.ImageD(ncol=33, nrow=33, wcs=wcs.local(image_pos))
 
         # piff offsets the center of the PSF from the true image
@@ -136,7 +140,7 @@ class DES_Piff(object):
             psf,
             wcs=wcs.local(image_pos),
             gsparams=gsparams,
-            x_interpolant='lanczos15'
+            x_interpolant=x_interpolant
         ).withFlux(
             1.0
         )
@@ -165,7 +169,8 @@ def BuildDES_Piff(config, base, ignore, gsparams, logger):
     opt = {'flux': float,
            'num': int,
            'image_pos': galsim.PositionD,
-           'smooth': bool}
+           'smooth': bool,
+           'x_interpolant': str}
     params, safe = galsim.config.GetAllParams(
         config, base, opt=opt, ignore=ignore)
 
@@ -191,7 +196,8 @@ def BuildDES_Piff(config, base, ignore, gsparams, logger):
         image_pos,
         wcs,
         gsparams=gsparams,
-        smooth=params.get('smooth', False))
+        smooth=params.get('smooth', False),
+        x_interpolant=params.get('x_interpolant', 'lanczos15'))
 
     if 'flux' in params:
         psf = psf.withFlux(params['flux'])
