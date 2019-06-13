@@ -42,11 +42,23 @@ c       : -0.000000 +/- 0.000000
 
 ## v003_exp_psfex
 
-Same as v001 but with psfex. 
+Same as v001 but with psfex.
 
 ```
 s2n: 10
 # of sims: 262800
 m       : 0.000297 +/- 0.000007
 c       : 0.000000 +/- 0.000000
+```
+
+## v004_exp_psfex_small_psf_stamp
+
+This one uses a smaller PSFEx stamp for the PSF model images fed into
+metacal than the ones used to render the objects.
+
+```
+s2n: 10
+# of sims: 169900
+m       : 0.000549 +/- 0.000011
+c       : 0.000001 +/- 0.000000
 ```
