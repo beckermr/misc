@@ -1,0 +1,53 @@
+modules:
+  - matts_misc.piff_wl_sims
+  - numpy
+
+input:
+  catalog:
+    file_name: piff_cat.txt
+  des_piff:
+    file_name:
+      type: Catalog
+      col: 0
+      index: {type: Random, min: 0, max: 399}
+
+image:
+  type: Tiled
+  nx_tiles: 10
+  ny_tiles: 10
+  stamp_size: 33
+  pixel_scale: 0.263
+  noise:
+    type: Gaussian
+    sigma: 1
+  random_seed: 153
+
+psf:
+  type: DES_Piff
+  smooth: False
+  flux: 1
+
+  # get random positions on the sky for the PSFs
+  image_pos:
+    type : XY
+    x: {type: Random, min: 1, max: 2048}
+    y: {type: Random, min: 1, max: 2048}
+
+stamp:
+  draw_method: 'no_pixel'
+
+gal:
+  type: Exponential
+  half_light_radius: 0.5
+  flux: 64000
+  shift:
+    type: XY
+    x: {type: Random, min: -0.263, max: 0.263}
+    y: {type: Random, min: -0.263, max: 0.263}
+  shear:
+    type: G1G2
+    g1: 0.02
+    g2: 0.0
+
+output:
+  file_name: gals.fits
