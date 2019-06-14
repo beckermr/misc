@@ -90,5 +90,8 @@ c       : -0.000047 +/- 0.000003
 Just like v001 but with 21 pixel postage stamps for the PSF.
 
 ```
-
+s2n: 10
+# of sims: 64474
+m       : 0.000098 +/- 0.000023
+c       : -0.000005 +/- 0.000001
 ```
