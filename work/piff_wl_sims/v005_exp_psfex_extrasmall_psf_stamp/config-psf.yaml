@@ -1,0 +1,19 @@
+template: config.yaml
+
+image.noise.sigma: 0
+image.stamp_size: 17
+
+gal:
+  type: DeltaFunction
+  flux: 1
+  shift:
+    type: XY
+    x: 0.0
+    y: 0.0
+  shear:
+    type: G1G2
+    g1: 0.0
+    g2: 0.0
+
+output:
+  file_name: psfs.fits
