@@ -62,3 +62,14 @@ s2n: 10
 m       : 0.000549 +/- 0.000011
 c       : 0.000001 +/- 0.000000
 ```
+
+## v005_exp_psfex_extrasmall_psf_stamp
+
+Just like v004 but with 17 pixel postage stamps for the PSF.
+
+```
+s2n: 10
+# of sims: 1000000
+m       : 0.010274 +/- 0.000020
+c       : 0.000012 +/- 0.000000
+```
