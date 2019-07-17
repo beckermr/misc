@@ -1,0 +1,59 @@
+import yaml
+import desmeds
+
+from .constants import MEDSCONF, PIFF_RUN
+from .files import (
+    get_band_info_file,
+    make_dirs_for_file)
+from .des_info import add_extra_des_coadd_tile_info
+
+
+def make_band_info(*, tilename, bands, output_meds_dir):
+    """Make YAML files with the information on each band.
+
+    Parameters
+    ----------
+    tilename : str
+        The DES coadd tilename (e.g., 'DES2122+0001').
+    bands : list of str
+        A list of bands to process (e.g., `['r', 'i', 'z']`).
+    output_meds_dir : str
+        The DESDATA/MEDS_DIR path where the info file should be written.
+
+    Returns
+    -------
+    info : dict
+        A dictionary mapping the band name to the info file. Note that these
+        paths are relative to the environment variable '$MEDS_DIR' in the
+        returned file path. Replace this with `output_meds_dir` to read
+        the file.
+    """
+
+    cfg = {
+        'campaign': 'Y3A1_COADD',
+        'source_type': 'finalcut',
+        'piff_run': PIFF_RUN,
+        'medsconf': MEDSCONF
+    }
+    fnames = {}
+    for band in bands:
+        band_info_file = get_band_info_file(
+            meds_dir=output_meds_dir,
+            medsconf=cfg['medsconf'],
+            tilename=tilename,
+            band=band)
+        prep = desmeds.desdm_maker.Preparator(
+                cfg,
+                tilename,
+                band,
+            )
+        info = prep.coadd.get_info()
+        add_extra_des_coadd_tile_info(info=info, piff_run=cfg['piff_run'])
+
+        make_dirs_for_file(band_info_file)
+        with open(band_info_file, 'w') as fp:
+            yaml.dump(info, fp)
+
+        fnames[band] = band_info_file.replace(output_meds_dir, '$MEDS_DIR')
+
+    return fnames

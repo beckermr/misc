@@ -1,0 +1,128 @@
+import os
+from contextlib import contextmanager
+
+
+@contextmanager
+def environ(**env):
+    """Temporarily set environment variables inside the context manager and
+    fully restore previous environment afterwardsself.
+
+    Pass the env vars as keywords.
+
+    Code from https://gist.github.com/igniteflow/7267431#gistcomment-2553451.
+
+    Example
+    -------
+    >>> with environ(USER='xyz'):
+    >>>     print(os.environ['USER'])
+    >>> print(os.environ['USER'])
+    """
+    original_env = {key: os.getenv(key) for key in env}
+    os.environ.update(env)
+    try:
+        yield
+    finally:
+        for key, value in original_env.items():
+            if value is None:
+                del os.environ[key]
+            else:
+                os.environ[key] = value
+
+
+def expand_path(path):
+    """Perform a full unix-like path expansion on `path`."""
+    return os.path.expandvars(os.path.expanduser(path))
+
+
+def make_dirs_for_file(filename):
+    """Make all of the parent directories for a file at `filename`."""
+    dirname = os.path.dirname(filename)
+    if len(dirname) > 0:
+        os.makedirs(dirname, exist_ok=True)
+
+
+def get_truth_catalog_path(*, meds_dir, medsconf, tilename):
+    """Get the truth catalog path.
+
+    Parameters
+    ----------
+    meds_dir : str
+        The DESDATA/MEDS_DIR path where the info file is located.
+    medsconf : str
+        The MEDS file version (e.g., 'y3v02').
+    tilename : str
+        The DES coadd tilename (e.g., 'DES2122+0001').
+
+    Returns
+    -------
+    truth_file_path : str
+        The path to the truth file.
+    """
+    return os.path.join(
+        meds_dir,
+        medsconf,
+        'simple_des_y3_sims',
+        'truthcats',
+        '%s_truthcat.fits' % tilename
+    )
+
+
+def get_band_info_file(*, meds_dir, medsconf, tilename, band):
+    """Get the path of the YAML file holding the info dict for the
+    `tilename` and `band`.
+
+    Parameters
+    ----------
+    meds_dir : str
+        The DESDATA/MEDS_DIR path where the info file is located.
+    medsconf : str
+        The MEDS file version (e.g., 'y3v02').
+    tilename : str
+        The DES coadd tilename (e.g., 'DES2122+0001').
+    bands : str
+        A bands (e.g., 'r').
+
+    Returns
+    -------
+    info_file : str
+        The YAML file with the coadd + SE information.
+    """
+    return os.path.join(
+        meds_dir,
+        medsconf,
+        'simple_des_y3_sims',
+        'band_info_files',
+        '%s_%s_info.yaml' % (tilename, band))
+
+
+def get_piff_path_from_image_path(*, image_path, piff_run):
+    """Get the piff path from the image path.
+
+    Parameters
+    ----------
+    image_path : str
+        A path to an immask file
+    piff_run : str
+        e.g. y3a1-v29
+
+    Returns
+    -------
+    psf_path : str
+        The path to the PSF.
+    """
+    img_bname = os.path.basename(image_path)
+    piff_bname = img_bname.replace('immasked.fits.fz', 'piff.fits')
+    expnum = int(piff_bname.split('_')[0][1:])
+
+    exp_dir = os.path.join(
+        '$PIFF_DATA_DIR',
+        piff_run,
+        str(expnum),
+    )
+
+    psf_path = os.path.join(
+        exp_dir,
+        piff_bname,
+    )
+
+    return psf_path
