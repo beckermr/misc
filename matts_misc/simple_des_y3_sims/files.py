@@ -41,6 +41,32 @@ def make_dirs_for_file(filename):
         os.makedirs(dirname, exist_ok=True)
 
 
+def get_meds_file_path(*, meds_dir, medsconf, tilename, band):
+    """Get the MEDS file for a given tile and band.
+
+    Parameters
+    ----------
+    meds_dir : str
+        The DESDATA/MEDS_DIR path where the info file is located.
+    medsconf : str
+        The MEDS file version (e.g., 'y3v02').
+    tilename : str
+        The DES coadd tilename (e.g., 'DES2122+0001').
+    band : str
+        The band as a string (e.g., `'r'`).
+
+    Returns
+    -------
+    meds_file : str
+        The path to the MEDS file.
+    """
+    return os.path.join(
+        meds_dir,
+        medsconf,
+        tilename,
+        "%s_%s_meds-%s.fits.fz" % (tilename, band, medsconf))
+
+
 def get_truth_catalog_path(*, meds_dir, medsconf, tilename):
     """Get the truth catalog path.
 

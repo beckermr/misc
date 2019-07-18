@@ -1,3 +1,5 @@
+import logging
+
 import yaml
 import desmeds
 
@@ -6,6 +8,8 @@ from .files import (
     get_band_info_file,
     make_dirs_for_file)
 from .des_info import add_extra_des_coadd_tile_info
+
+logger = logging.getLogger(__name__)
 
 
 def make_band_info(*, tilename, bands, output_meds_dir):
@@ -28,6 +32,8 @@ def make_band_info(*, tilename, bands, output_meds_dir):
         returned file path. Replace this with `output_meds_dir` to read
         the file.
     """
+
+    logger.info(' processing coadd tile %s', tilename)
 
     cfg = {
         'campaign': 'Y3A1_COADD',

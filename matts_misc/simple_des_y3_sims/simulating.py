@@ -1,5 +1,6 @@
 import logging
 import shutil
+import os
 
 import numpy as np
 import yaml
@@ -87,6 +88,8 @@ class End2EndSimulation(object):
     def run(self):
         """Run the simulation w/ galsim, writing the data to disk."""
 
+        logger.info(' simulating coadd tile %s', self.tilename)
+
         # step 1 - make the truth catalog
         truth_cat = self._make_truth_catalog()
 
@@ -133,14 +136,22 @@ class End2EndSimulation(object):
             image_path=self.info[band]['image_path'],
             image_ext=self.info[band]['image_ext'])
 
-        ra, dec = make_coadd_grid_radec(
-            rng=self.gal_rng, coadd_wcs=coadd_wcs, **self.gal_kws)
+        ra, dec, x, y = make_coadd_grid_radec(
+            rng=self.gal_rng, coadd_wcs=coadd_wcs,
+            return_xy=True, n_grid=self.gal_kws['n_grid'])
 
         truth_cat = np.zeros(
-            len(ra), dtype=[('number', 'i8'), ('ra', 'f8'), ('dec', 'f8')])
+            len(ra), dtype=[
+                ('number', 'i8'),
+                ('ra', 'f8'),
+                ('dec', 'f8'),
+                ('x', 'f8'),
+                ('y', 'f8')])
         truth_cat['number'] = np.arange(len(ra)).astype(np.int64) + 1
         truth_cat['ra'] = ra
         truth_cat['dec'] = dec
+        truth_cat['x'] = x
+        truth_cat['y'] = y
 
         truth_cat_path = get_truth_catalog_path(
             meds_dir=self.output_meds_dir,
@@ -296,7 +307,8 @@ def _write_se_img_wgt_bkg(
     image_file = se_info['image_path'].replace(
         '$MEDS_DIR', output_meds_dir)
     make_dirs_for_file(image_file)
-    with StagedOutFile(image_file) as sf:
+    with StagedOutFile(
+            image_file, tmpdir=os.environ.get('TMPDIR', None)) as sf:
         # copy to the place we stage from
         shutil.copy(expand_path(se_info['image_path']), sf.path)
 
@@ -311,7 +323,7 @@ def _write_se_img_wgt_bkg(
     bkg_file = se_info['bkg_path'].replace(
         '$MEDS_DIR', output_meds_dir)
     make_dirs_for_file(bkg_file)
-    with StagedOutFile(bkg_file) as sf:
+    with StagedOutFile(bkg_file, tmpdir=os.environ.get('TMPDIR', None)) as sf:
         # copy to the place we stage from
         shutil.copy(expand_path(se_info['bkg_path']), sf.path)
 

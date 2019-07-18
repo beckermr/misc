@@ -1,9 +1,21 @@
 #!/usr/bin/env python
+import logging
+import sys
+
 import click
 import yaml
 
 from matts_misc.simple_des_y3_sims.band_infoing import make_band_info
 from matts_misc.simple_des_y3_sims.simulating import End2EndSimulation
+from matts_misc.simple_des_y3_sims.true_detecting import make_true_detections
+from matts_misc.simple_des_y3_sims.medsing import make_meds_files
+
+for lib in ['matts_misc.simple_des_y3_sims']:
+    lgr = logging.getLogger(lib)
+    hdr = logging.StreamHandler(sys.stdout)
+    hdr.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+    lgr.setLevel(logging.DEBUG)
+    lgr.addHandler(hdr)
 
 
 @click.group()
@@ -54,8 +66,23 @@ def galsim(tilename, bands, output_desdata, seed, config_file):
 
 
 @cli.command('true-detection')
-def true_detection():
-    click.echo('run true-detection for a tile')
+@click.option('--tilename', type=str, required=True,
+              help='the coadd tile to simulate')
+@click.option('--bands', type=str, required=True,
+              help=('a list of bands to simulate as '
+                    'a concatnated string (e.g., "riz")'))
+@click.option('--output-desdata', type=str, required=True,
+              help='the output DESDATA directory')
+@click.option('--config-file', type=str, required=True,
+              help='the YAML config file')
+def true_detection(tilename, bands, output_desdata, config_file):
+    with open(config_file, 'r') as fp:
+        config = yaml.load(fp, Loader=yaml.Loader)
+    make_true_detections(
+        tilename=tilename,
+        bands=[b for b in bands],
+        output_meds_dir=output_desdata,
+        box_size=config['true_detection']['box_size'])
 
 
 @cli.command('swarp')
@@ -69,8 +96,28 @@ def source_extractor():
 
 
 @cli.command()
-def meds():
-    click.echo('run meds for a tile')
+@click.option('--tilename', type=str, required=True,
+              help='the coadd tile to simulate')
+@click.option('--bands', type=str, required=True,
+              help=('a list of bands to simulate as '
+                    'a concatnated string (e.g., "riz")'))
+@click.option('--output-desdata', type=str, required=True,
+              help='the output DESDATA directory')
+@click.option('--config-file', type=str, required=True,
+              help='the YAML config file')
+@click.option('--meds-config-file', type=str, required=True,
+              help='the YAML config file for MEDS making')
+def meds(tilename, bands, output_desdata, config_file, meds_config_file):
+    with open(config_file, 'r') as fp:
+        config = yaml.load(fp, Loader=yaml.Loader)
+    with open(meds_config_file, 'r') as fp:
+        meds_config = yaml.load(fp, Loader=yaml.Loader)
+    make_meds_files(
+        tilename=tilename,
+        bands=[b for b in bands],
+        output_meds_dir=output_desdata,
+        psf_kws=config['psf_kws'],
+        meds_config=meds_config)
 
 
 if __name__ == '__main__':

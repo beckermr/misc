@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def make_coadd_grid_radec(*, n_grid, coadd_wcs, rng):
+def make_coadd_grid_radec(*, n_grid, coadd_wcs, rng, return_xy=False):
     """Make a grid of points in the coadd image coordinate system and
     return their locations in ra-dec.
 
@@ -15,6 +15,8 @@ def make_coadd_grid_radec(*, n_grid, coadd_wcs, rng):
     rng : np.random.RandomState
         An RNG to use. This RNg is used to dither the locations on the coadd
         grid within a pixel.
+    return_xy : bool, optional
+        If True, also return the x and y positions. Default is False
 
     Returns
     -------
@@ -22,6 +24,10 @@ def make_coadd_grid_radec(*, n_grid, coadd_wcs, rng):
         The array of ra positions of the sources.
     dec : np.ndarray
         The array of dec positions of the sources.
+    x : np.ndarray
+        The array of column positions. Only returned if `return_xy=True`.
+    y : np.ndarray
+        The array of row positions. Only returned if `return_xy=True`.
     """
     L = 10000  # hard code this since it will not change
     dL = L / n_grid
@@ -41,5 +47,11 @@ def make_coadd_grid_radec(*, n_grid, coadd_wcs, rng):
             x.append(_x)
             y.append(_y)
 
-    ra, dec = coadd_wcs.image2sky(np.array(x), np.array(y))
-    return ra, dec
+    x = np.array(x)
+    y = np.array(y)
+    ra, dec = coadd_wcs.image2sky(x, y)
+
+    if return_xy:
+        return ra, dec, x, y
+    else:
+        return ra, dec
