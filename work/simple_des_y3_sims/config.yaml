@@ -3,7 +3,7 @@ gal_kws:
   n_grid: 3
 
 psf_kws:
-  type: gauss
+  type: piff
 
 true_detection:
   box_size: 32

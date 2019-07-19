@@ -102,18 +102,20 @@ class End2EndSimulation(object):
 
         logger.info(" rendering images in band %s", band)
 
-        def obj_func(ind, truth_cat, pos):
-            obj = galsim.Exponential(half_light_radius=0.5).withFlux(64000)
-            psf = galsim.Gaussian(fwhm=0.9)
-            obj = galsim.Convolve([obj, psf])
-            return obj
-
         noise_seeds = self.noise_rng.randint(
             low=1, high=2**30, size=len(self.info[band]['src_info']))
 
         jobs = []
         for noise_seed, se_info in zip(
                 noise_seeds, self.info[band]['src_info']):
+            _psf_closure = self._make_psf_closure(se_info=se_info)
+
+            def obj_func(ind, truth_cat, pos):
+                obj = galsim.Exponential(half_light_radius=0.5).withFlux(64000)
+                psf = _psf_closure(pos)
+                obj = galsim.Convolve([obj, psf])
+                return obj
+
             jobs.append(joblib.delayed(_render_se_image)(
                 se_info=se_info,
                 band=band,
@@ -127,6 +129,28 @@ class End2EndSimulation(object):
         with joblib.Parallel(
                 n_jobs=-1, backend='loky', verbose=50, max_nbytes=None) as p:
             p(jobs)
+
+    def _make_psf_closure(self, *, se_info):
+        if self.psf_kws['type'] == 'gauss':
+            def _psf_closure(pos):
+                return galsim.Gaussian(fwhm=0.9)
+        elif self.psf_kws['type'] == 'piff':
+            from .des_piff import DES_Piff
+            from .psf_wrapper import PSFWrapper
+
+            piff_model = DES_Piff(expand_path(se_info['piff_path']))
+            wcs = get_galsim_wcs(
+                image_path=se_info['image_path'],
+                image_ext=se_info['image_ext'])
+            psf_wrap = PSFWrapper(piff_model, wcs)
+
+            def _psf_closure(pos):
+                return psf_wrap.getPSF(image_pos=pos)
+        else:
+            raise ValueError(
+                "psf type '%s' not recognized!" % self.psf_kws['type'])
+
+        return _psf_closure
 
     def _make_truth_catalog(self):
         """Make the truth catalog."""

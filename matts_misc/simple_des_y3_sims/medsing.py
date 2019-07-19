@@ -14,7 +14,7 @@ import desmeds.util
 from .constants import MAGZP_REF, MEDSCONF
 from .psf_wrapper import PSFWrapper
 from .wcsing import get_galsim_wcs
-from .files import get_band_info_file, get_meds_file_path
+from .files import get_band_info_file, get_meds_file_path, expand_path
 
 logger = logging.getLogger(__name__)
 
@@ -105,10 +105,14 @@ def _build_psf_data(*, info, psf_kws, output_meds_dir):
             image_path=_info['image_path'].replace(
                 '$MEDS_DIR', output_meds_dir),
             image_ext=_info['image_ext'])
-        if psf_kws['type'] == 'gauss':
+        if psf_kws['type'] == 'gauss' or 'piff_path' not in _info:
             return PSFWrapper(galsim.Gaussian(fwhm=0.9), wcs)
+        elif psf_kws['type'] == 'piff':
+            from .des_piff import DES_Piff
+            piff_model = DES_Piff(expand_path(_info['piff_path']))
+            return PSFWrapper(piff_model, wcs)
         else:
-            raise ValueError("psf type '%' is not valid!" % psf_kws['type'])
+            raise ValueError("psf type '%s' is not valid!" % psf_kws['type'])
 
     psf_data = [_load_psf_data(info)]
     for se_info in info['src_info']:
