@@ -42,6 +42,10 @@ class End2EndSimulation(object):
             n_grid : int
                 The galaxies will be put on a grid with `n_grid`
                 on a side.
+            g1 : float
+                The true shear on the one-axis.
+            g2 : float
+                The true shear on the two-axis.
     psf_kws : dict
         Kyword arguments to control the PSF used for the simulation.
         Right now these should include:
@@ -110,8 +114,12 @@ class End2EndSimulation(object):
                 noise_seeds, self.info[band]['src_info']):
             _psf_closure = self._make_psf_closure(se_info=se_info)
 
+            g1 = self.gal_kws['g1'],
+            g2 = self.gal_kws['g2'],
+
             def obj_func(ind, truth_cat, pos):
                 obj = galsim.Exponential(half_light_radius=0.5).withFlux(64000)
+                obj = obj.shear(g1=g1, g2=g2)
                 psf = _psf_closure(pos)
                 obj = galsim.Convolve([obj, psf])
                 return obj
