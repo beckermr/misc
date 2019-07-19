@@ -7,6 +7,7 @@
 #SBATCH -o results-{{ tilename }}.oe
 #SBATCH -t 24:00:00
 
+export MEDS_DIR=$DESDATA
 export TMPDIR=/scratch
 
 output="outputs-{{ tilename }}"
