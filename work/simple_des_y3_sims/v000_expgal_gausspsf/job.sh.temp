@@ -41,8 +41,8 @@ run-simple-des-y3-sim \
   meds \
   --tilename="$tilename" \
   --bands="$bands" \
-  --output-desdata="outputs" \
-  --config-file="$output" \
+  --output-desdata="$output" \
+  --config-file="config.yaml" \
   --meds-config-file="../default_configs/meds.yaml"
 
 conda deactivate
