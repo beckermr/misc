@@ -97,6 +97,10 @@ def make_meds_files(*, tilename, bands, output_meds_dir, psf_kws, meds_config):
             uncompressed_file = sf.path.replace('.fits.fz', '.fits')
             maker.write(uncompressed_file)
             desmeds.util.fpack_file(uncompressed_file)
+            try:
+                os.remove(uncompressed_file)
+            except Exception:
+                pass
 
 
 def _build_psf_data(*, info, psf_kws, output_meds_dir):
