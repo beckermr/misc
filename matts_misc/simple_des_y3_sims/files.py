@@ -87,8 +87,8 @@ def get_truth_catalog_path(*, meds_dir, medsconf, tilename):
     """
     return os.path.join(
         meds_dir,
-        medsconf,
         'simple_des_y3_sims',
+        medsconf,
         'truthcats',
         '%s_truthcat.fits' % tilename
     )
@@ -116,8 +116,8 @@ def get_band_info_file(*, meds_dir, medsconf, tilename, band):
     """
     return os.path.join(
         meds_dir,
-        medsconf,
         'simple_des_y3_sims',
+        medsconf,
         'band_info_files',
         '%s_%s_info.yaml' % (tilename, band))
 
