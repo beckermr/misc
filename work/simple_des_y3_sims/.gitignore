@@ -1,3 +1,4 @@
 *.fits
 *.fits.fz
 *_info.yaml
+example_for_testing/outputs/*

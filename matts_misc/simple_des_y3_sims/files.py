@@ -62,6 +62,7 @@ def get_meds_file_path(*, meds_dir, medsconf, tilename, band):
     """
     return os.path.join(
         meds_dir,
+        'meds',
         medsconf,
         tilename,
         "%s_%s_meds-%s.fits.fz" % (tilename, band, medsconf))

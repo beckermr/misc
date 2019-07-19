@@ -28,7 +28,7 @@ def cli():
 @click.option('--tilename', type=str, required=True,
               help='the coadd tile to simulate')
 @click.option('--bands', type=str, required=True,
-              help=('a list of bands to simulate as '
+              help=('a list of bands to prep for as '
                     'a concatnated string (e.g., "riz")'))
 @click.option('--output-desdata', type=str, required=True,
               help='the output DESDATA directory')
@@ -69,7 +69,7 @@ def galsim(tilename, bands, output_desdata, seed, config_file):
 @click.option('--tilename', type=str, required=True,
               help='the coadd tile to simulate')
 @click.option('--bands', type=str, required=True,
-              help=('a list of bands to simulate as '
+              help=('a list of bands to run detection for as '
                     'a concatnated string (e.g., "riz")'))
 @click.option('--output-desdata', type=str, required=True,
               help='the output DESDATA directory')
@@ -99,7 +99,7 @@ def source_extractor():
 @click.option('--tilename', type=str, required=True,
               help='the coadd tile to simulate')
 @click.option('--bands', type=str, required=True,
-              help=('a list of bands to simulate as '
+              help=('a list of bands to make MEDS files for as '
                     'a concatnated string (e.g., "riz")'))
 @click.option('--output-desdata', type=str, required=True,
               help='the output DESDATA directory')
