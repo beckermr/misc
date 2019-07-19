@@ -47,6 +47,8 @@ run-simple-des-y3-sim \
 
 conda deactivate
 
+rm -rf $output/y3v02/*
+
 source activate des-y3
 
 run-simple-des-y3-sim-mcal \
