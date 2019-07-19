@@ -114,8 +114,8 @@ class End2EndSimulation(object):
                 noise_seeds, self.info[band]['src_info']):
             _psf_closure = self._make_psf_closure(se_info=se_info)
 
-            g1 = self.gal_kws['g1'],
-            g2 = self.gal_kws['g2'],
+            g1 = self.gal_kws['g1']
+            g2 = self.gal_kws['g2']
 
             def obj_func(ind, truth_cat, pos):
                 obj = galsim.Exponential(half_light_radius=0.5).withFlux(64000)
