@@ -8,15 +8,27 @@ SHEARS = ['1p', '1m', '2p', '2m']
 
 
 def _msk_it(d, s2n_cut=None, size_cut=None, shear=''):
-    return (
-        # (d['flags'] == 0) &
-        # (np.sum(d['psf_flags'], axis=1) == 0) &
-        # (d['obj_flags'] == 0) &
-        # (d['gauss_flags'] == 0) &
-        (d['mcal_flags'] == 0) &
-        ((d['mcal_s2n_r' + shear]) > s2n_cut) &
-        ((d['mcal_T_r' + shear] / d['mcal_Tpsf']) > size_cut)
-    )
+    test_col = 'mcal_T_r' + shear
+    if test_col in d.dtype.names:
+        return (
+            # (d['flags'] == 0) &
+            # (np.sum(d['psf_flags'], axis=1) == 0) &
+            # (d['obj_flags'] == 0) &
+            # (d['gauss_flags'] == 0) &
+            (d['mcal_flags'] == 0) &
+            (d['mcal_s2n_r' + shear] > s2n_cut) &
+            ((d['mcal_T_r' + shear] / d['mcal_Tpsf']) > size_cut)
+        )
+    else:
+        return (
+            # (d['flags'] == 0) &
+            # (np.sum(d['psf_flags'], axis=1) == 0) &
+            # (d['obj_flags'] == 0) &
+            # (d['gauss_flags'] == 0) &
+            (d['mcal_flags'] == 0) &
+            (d['mcal_s2n' + shear] > s2n_cut) &
+            (d['mcal_T_ratio' + shear] > size_cut)
+        )
 
 
 def _measure_R(d, s2n_cut=None, size_cut=None):
@@ -24,8 +36,13 @@ def _measure_R(d, s2n_cut=None, size_cut=None):
     for shear in SHEARS:
         msks[shear] = _msk_it(
             d, s2n_cut=s2n_cut, size_cut=size_cut, shear='_' + shear)
-    msks['noshear'] = _msk_it(
-        d, s2n_cut=s2n_cut, size_cut=size_cut, shear='')
+
+    if 'mcal_g' in d.dtype.names:
+        msks['noshear'] = _msk_it(
+            d, s2n_cut=s2n_cut, size_cut=size_cut, shear='')
+    else:
+        msks['noshear'] = _msk_it(
+            d, s2n_cut=s2n_cut, size_cut=size_cut, shear='_noshear')
 
     g1_1p = np.mean(d['mcal_g_1p'][msks['1p'], 0])
     g1_1m = np.mean(d['mcal_g_1m'][msks['1m'], 0])
@@ -34,8 +51,12 @@ def _measure_R(d, s2n_cut=None, size_cut=None):
     R11 = (g1_1p - g1_1m) / 2 / 0.01
     R22 = (g2_2p - g2_2m) / 2 / 0.01
 
-    g1 = np.mean(d['mcal_g'][msks['noshear'], 0])
-    g2 = np.mean(d['mcal_g'][msks['noshear'], 1])
+    if 'mcal_g' in d.dtype.names:
+        g1 = np.mean(d['mcal_g'][msks['noshear'], 0])
+        g2 = np.mean(d['mcal_g'][msks['noshear'], 1])
+    else:
+        g1 = np.mean(d['mcal_g_noshear'][msks['noshear'], 0])
+        g2 = np.mean(d['mcal_g_noshear'][msks['noshear'], 1])
 
     return g1, g2, R11, R22
 
@@ -43,7 +64,7 @@ def _measure_R(d, s2n_cut=None, size_cut=None):
 fnames = sys.argv[1:]
 
 d = []
-for fname in fnames:
+for fname in sorted(fnames):
     _d = fitsio.read(fname)
     d.extend(list(_d))
 d = np.array(d, dtype=_d.dtype)

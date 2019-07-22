@@ -41,6 +41,30 @@ def make_dirs_for_file(filename):
         os.makedirs(dirname, exist_ok=True)
 
 
+def get_mcal_file_path(*, meds_dir, medsconf, tilename):
+    """Get the path to the output metacal file.
+
+    Parameters
+    ----------
+    meds_dir : str
+        The DESDATA/MEDS_DIR path where the info file is located.
+    medsconf : str
+        The MEDS file version (e.g., 'y3v02').
+    tilename : str
+        The DES coadd tilename (e.g., 'DES2122+0001').
+
+    Returns
+    -------
+    mcal_pth : str
+        The path to the metacal file.
+    """
+    return os.path.join(
+        meds_dir,
+        'metacal',
+        medsconf,
+        "%s_metacal.fits" % tilename)
+
+
 def get_meds_file_path(*, meds_dir, medsconf, tilename, band):
     """Get the MEDS file for a given tile and band.
 
