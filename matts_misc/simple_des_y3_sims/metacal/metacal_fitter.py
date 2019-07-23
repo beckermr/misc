@@ -268,6 +268,11 @@ class MetacalFitter(FitterBase):
         # needed for the code below
         assert METACAL_TYPES[0] == 'noshear'
 
+        if 'T_r' in allres['noshear'] and 'T' not in allres['noshear']:
+            do_round = True
+        else:
+            do_round = False
+
         npars = len(allres['noshear']['pars'])
         dt = self._get_metacal_dtype(npars, nband)
         data = np.zeros(1, dtype=dt)
@@ -284,10 +289,16 @@ class MetacalFitter(FitterBase):
 
             if mtype == 'noshear':
                 data0[n('psf_g')] = res['gpsf']
-                data0[n('psf_T')] = res['Tpsf']
+                if do_round:
+                    data0[n('psf_T')] = res['psf_T_r']
+                else:
+                    data0[n('psf_T')] = res['Tpsf']
 
             for name in res:
-                nn = n(name)
+                if do_round and name == 'T_r':
+                    nn = n('T')
+                else:
+                    nn = n(name)
                 if nn in data.dtype.names:
                     data0[nn] = res[name]
 
