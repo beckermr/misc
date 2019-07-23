@@ -5,7 +5,7 @@ import joblib
 import esutil as eu
 import fitsio
 from ngmix import ObsList, MultiBandObsList
-from ngmix.medsreaders import NGMixMEDS, MultiBandNGMixMEDS
+from .ngmix_compat import NGMixMEDS, MultiBandNGMixMEDS
 
 from .files import get_meds_file_path, get_mcal_file_path, make_dirs_for_file
 from .metacal.metacal_fitter import MetacalFitter
@@ -19,8 +19,9 @@ CONFIG = {
         'bmask_flags': 2**30,
 
         'metacal_pars': {
-            'psf': 'fitgauss',
+            # 'psf': 'fitgauss',
             'types': ['noshear', '1p', '1m', '2p', '2m'],
+            'symmetrize_psf': True
             # 'use_noise_image': True,
         },
 

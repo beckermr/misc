@@ -6,7 +6,7 @@ from ngmix import ObsList, MultiBandObsList
 from ngmix.bootstrap import MaxMetacalBootstrapper
 from ngmix.gexceptions import BootPSFFailure, BootGalFailure
 
-from .base_fitter import FitterBase, _fit_one_psf
+from .base_fitter import FitterBase, _fit_one_psf, _fit_all_psfs
 from .util import Namer
 
 logger = logging.getLogger(__name__)
@@ -123,6 +123,8 @@ class MetacalFitter(FitterBase):
             passed_flags, mbobs = self._check_flags(_mbobs)
             if passed_flags:
                 try:
+                    _fit_all_psfs([mbobs], self['metacal']['psf'])
+
                     boot = self._do_one_metacal(mbobs)
                     if isinstance(boot, dict):
                         res = boot
@@ -205,7 +207,7 @@ class MetacalFitter(FitterBase):
                     if np.any(msk):
                         logger.info("   EDGE HIT")
                     else:
-                        _obslist.append(obs.copy())
+                        _obslist.append(obs)
                         passed_flags = True
 
                 _mbobs.append(_obslist)

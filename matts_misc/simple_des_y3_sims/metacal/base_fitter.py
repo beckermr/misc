@@ -2,10 +2,15 @@ import logging
 import numpy as np
 
 import ngmix
-from ngmix import format_pars
+from ..ngmix_compat import format_pars
 from ngmix.gexceptions import BootPSFFailure
-from ngmix.joint_prior import PriorSimpleSep, PriorBDFSep, PriorBDSep
+from ngmix.joint_prior import PriorSimpleSep
 
+try:
+    from ngmix.joint_prior import PriorBDFSep, PriorBDSep
+    NO_BD_MODELS = False
+except ImportError:
+    NO_BD_MODELS = True
 
 from .util import NoDataError
 
@@ -53,6 +58,9 @@ class FitterBase(dict):
         if 'bd' in conf['model']:
             assert 'fracdev' in ppars, (
                 "set fracdev prior for bdf and bd models")
+            assert not NO_BD_MODELS, (
+                "Using BD models requires ngmix with the proper priors."
+                " Try updating!")
 
         if conf['model'] == 'bd':
             assert 'logTratio' in ppars, "set logTratio prior for bd model"
