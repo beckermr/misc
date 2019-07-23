@@ -85,7 +85,8 @@ def run_metacal(*, tilename, output_meds_dir, bands, seed):
     bands : str
         The bands on which to run metacal.
     seed : int
-        The seed for the global RNG.    """
+        The seed for the global RNG.
+    """
     meds_files = [
         get_meds_file_path(
             meds_dir=output_meds_dir,
@@ -175,17 +176,14 @@ def _run_mcal_one_chunk(meds_files, start, end, seed):
         for ind in range(start, end):
             o = mbmeds.get_mbobs(ind)
             o = _strip_coadd(o)
+            o = _strip_zero_flux(o)
+            o = _apply_pixel_scale(o)
 
             skip_me = False
             for ol in o:
                 if len(ol) == 0:
                     logger.debug(' not all bands have images - skipping!')
                     skip_me = True
-            for ol in o:
-                for oo in ol:
-                    if np.sum(oo.image) <= 0:
-                        logger.debug(' zero flux image detected - skipping!')
-                        skip_me = True
             if skip_me:
                 continue
 
@@ -222,5 +220,28 @@ def _strip_coadd(mbobs):
         for i in range(1, len(ol)):
             _ol.append(ol[i])
         _mbobs.append(_ol)
-
     return _mbobs
+
+
+def _strip_zero_flux(mbobs):
+    _mbobs = MultiBandObsList()
+    _mbobs.update_meta_data(mbobs.meta)
+    for ol in mbobs:
+        _ol = ObsList()
+        _ol.update_meta_data(ol.meta)
+        for i in range(len(ol)):
+            if np.sum(ol[i].image) > 0:
+                _ol.append(ol[i])
+        _mbobs.append(_ol)
+    return _mbobs
+
+
+def _apply_pixel_scale(mbobs):
+    for ol in mbobs:
+        for o in ol:
+            scale = o.jacobian.get_scale()
+            scale2 = scale * scale
+            scale4 = scale2 * scale2
+            o.image = o.image / scale2
+            o.weight = o.weight * scale4
+    return mbobs
