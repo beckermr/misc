@@ -6,6 +6,7 @@ from ngmix import ObsList, MultiBandObsList
 from ngmix.bootstrap import MaxMetacalBootstrapper
 from ngmix.gexceptions import BootPSFFailure, BootGalFailure
 
+from ..ngmix_compat import NGMIX_V1
 from .base_fitter import FitterBase, _fit_one_psf, _fit_all_psfs
 from .util import Namer
 
@@ -123,7 +124,8 @@ class MetacalFitter(FitterBase):
             passed_flags, mbobs = self._check_flags(_mbobs)
             if passed_flags:
                 try:
-                    _fit_all_psfs([mbobs], self['metacal']['psf'])
+                    if NGMIX_V1:
+                        _fit_all_psfs([mbobs], self['metacal']['psf'])
 
                     boot = self._do_one_metacal(mbobs)
                     if isinstance(boot, dict):

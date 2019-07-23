@@ -5,7 +5,7 @@ import joblib
 import esutil as eu
 import fitsio
 from ngmix import ObsList, MultiBandObsList
-from .ngmix_compat import NGMixMEDS, MultiBandNGMixMEDS
+from .ngmix_compat import NGMixMEDS, MultiBandNGMixMEDS, NGMIX_V1
 
 from .files import get_meds_file_path, get_mcal_file_path, make_dirs_for_file
 from .metacal.metacal_fitter import MetacalFitter
@@ -17,13 +17,6 @@ CONFIG = {
     'metacal': {
         # check for an edge hit
         'bmask_flags': 2**30,
-
-        'metacal_pars': {
-            # 'psf': 'fitgauss',
-            'types': ['noshear', '1p', '1m', '2p', '2m'],
-            'symmetrize_psf': True
-            # 'use_noise_image': True,
-        },
 
         'model': 'gauss',
 
@@ -72,6 +65,18 @@ CONFIG = {
         }
     },
 }
+
+if NGMIX_V1:
+    CONFIG['metacal']['metacal_pars'] = {
+        'types': ['noshear', '1p', '1m', '2p', '2m'],
+        'symmetrize_psf': True
+    }
+else:
+    CONFIG['metacal']['metacal_pars'] = {
+        'psf': 'fitgauss',
+        'types': ['noshear', '1p', '1m', '2p', '2m'],
+        # 'use_noise_image': True,
+    }
 
 
 def run_metacal(*, tilename, output_meds_dir, bands, seed):

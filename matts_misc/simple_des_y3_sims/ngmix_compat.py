@@ -1,7 +1,11 @@
 try:
     from ngmix.medsreaders import MultiBandNGMixMEDS, NGMixMEDS
     from ngmix.fitting import format_pars
+
+    NGMIX_V1 = False
 except ImportError:
+
+    NGMIX_V1 = True
 
     import os
     import numpy as np
