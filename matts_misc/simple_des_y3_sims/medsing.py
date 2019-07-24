@@ -99,6 +99,12 @@ def make_meds_files(*, tilename, bands, output_meds_dir, psf_kws, meds_config):
             uncompressed_file = sf.path.replace('.fits.fz', '.fits')
             make_dirs_for_file(uncompressed_file)
             maker.write(uncompressed_file)
+
+            # make sure to remove the destination file when fpacking
+            try:
+                os.remove(sf.path)
+            except Exception:
+                pass
             desmeds.util.fpack_file(uncompressed_file)
             try:
                 os.remove(uncompressed_file)
