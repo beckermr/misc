@@ -69,7 +69,7 @@ CONFIG = {
 if NGMIX_V1:
     CONFIG['metacal']['metacal_pars'] = {
         'types': ['noshear', '1p', '1m', '2p', '2m'],
-        'symmetrize_psf': True
+        # 'symmetrize_psf': True
     }
 else:
     CONFIG['metacal']['metacal_pars'] = {
