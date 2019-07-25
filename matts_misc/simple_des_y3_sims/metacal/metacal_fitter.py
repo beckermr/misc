@@ -6,7 +6,8 @@ from ngmix import ObsList, MultiBandObsList
 from ngmix.bootstrap import MaxMetacalBootstrapper
 from ngmix.gexceptions import BootPSFFailure, BootGalFailure
 
-from .base_fitter import FitterBase, _fit_one_psf
+from ..ngmix_compat import NGMIX_V1
+from .base_fitter import FitterBase, _fit_one_psf, _fit_all_psfs
 from .util import Namer
 
 logger = logging.getLogger(__name__)
@@ -123,6 +124,9 @@ class MetacalFitter(FitterBase):
             passed_flags, mbobs = self._check_flags(_mbobs)
             if passed_flags:
                 try:
+                    if NGMIX_V1:
+                        _fit_all_psfs([mbobs], self['metacal']['psf'])
+
                     boot = self._do_one_metacal(mbobs)
                     if isinstance(boot, dict):
                         res = boot
@@ -205,7 +209,7 @@ class MetacalFitter(FitterBase):
                     if np.any(msk):
                         logger.info("   EDGE HIT")
                     else:
-                        _obslist.append(obs.copy())
+                        _obslist.append(obs)
                         passed_flags = True
 
                 _mbobs.append(_obslist)
@@ -264,6 +268,11 @@ class MetacalFitter(FitterBase):
         # needed for the code below
         assert METACAL_TYPES[0] == 'noshear'
 
+        if 'T_r' in allres['noshear'] and 'T' not in allres['noshear']:
+            do_round = True
+        else:
+            do_round = False
+
         npars = len(allres['noshear']['pars'])
         dt = self._get_metacal_dtype(npars, nband)
         data = np.zeros(1, dtype=dt)
@@ -280,10 +289,16 @@ class MetacalFitter(FitterBase):
 
             if mtype == 'noshear':
                 data0[n('psf_g')] = res['gpsf']
-                data0[n('psf_T')] = res['Tpsf']
+                if do_round:
+                    data0[n('psf_T')] = res['psf_T_r']
+                else:
+                    data0[n('psf_T')] = res['Tpsf']
 
             for name in res:
-                nn = n(name)
+                if do_round and name == 'T_r':
+                    nn = n('T')
+                else:
+                    nn = n(name)
                 if nn in data.dtype.names:
                     data0[nn] = res[name]
 
