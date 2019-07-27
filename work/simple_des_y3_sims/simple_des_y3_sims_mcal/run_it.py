@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 MEDSCONF = 'y3v02'
 
 
-def run_mcal(tilename, output_desdata, mcal_config, seed):
+def run_mcal(tilename, output_desdata, mcal_config, seed, meds_files=None):
     """
     """
 
@@ -34,10 +34,11 @@ def run_mcal(tilename, output_desdata, mcal_config, seed):
         }
         with environ(**kwargs):
             # get MEDS files
-            meds_files = get_meds_files(
-                MEDSCONF,
-                tilename,
-                mcal_config['jobs']['bands'])
+            if meds_files is None:
+                meds_files = get_meds_files(
+                    MEDSCONF,
+                    tilename,
+                    mcal_config['jobs']['bands'])
             logger.info(' MEDS files %s', meds_files)
 
             # we write a tempfile with the config since we might have changed

@@ -1,0 +1,30 @@
+#!/bin/bash
+#!/bin/bash
+#SBATCH -J v000-{{ tilename }}
+#SBATCH -p bdw
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH -o results-{{ tilename }}.oe
+#SBATCH -t 24:00:00
+
+export MEDS_DIR=$DESDATA
+export TMPDIR=/scratch
+
+pth=/home/mbecker/project-metashear/des_y3_image_sims/y3-wl_image_sims/matts_tests/v004_e2e_nostar_lownoise_grid_truedet
+
+medsfiles="$pth/outputs-{{ tilename }}/meds/y3v02/{{ tilename }}/{{ tilename }}_r_meds-y3v02.fits.fz,\
+$pth/outputs-{{ tilename }}/meds/y3v02/{{ tilename }}/{{ tilename }}_i_meds-y3v02.fits.fz,\
+$pth/outputs-{{ tilename }}/meds/y3v02/{{ tilename }}/{{ tilename }}_z_meds-y3v02.fits.fz"
+
+output="outputs-{{ tilename }}"
+bands="riz"
+tilename="{{ tilename }}"
+
+source activate des-y3
+
+run-simple-des-y3-sim-mcal \
+  --bands="$bands" \
+  --output-desdata="$output" \
+  --mcal-config-file="../default_configs/run-mcal-nouberseg.yaml" \
+  --seed="{{ seed_mcal }}" \
+  --meds-files="$medsfiles"
