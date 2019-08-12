@@ -18,7 +18,22 @@ MEDSCONF = 'y3v02'
 
 
 def run_mcal(tilename, output_desdata, mcal_config, seed, meds_files=None):
-    """
+    """Run metacal on a coadd tile.
+
+    Parameters
+    ----------
+    tilename : str
+        The DES coadd tile on which to make measurements.
+    output_desdata : str
+        The output DESDATA/MEDSDIR path for the metacal measurements.
+    mcal_config : dict
+        A dictionary with the mtacal configuration information.
+    seed : int
+        The random seed for this run of the code.
+    meds_files : list of str, optional
+        A list of MEDS files on which to run metacal. The default of `None`
+        will pull the required set from their canonical location for the
+        given `output_desdata` and `tilename`.
     """
 
     try:

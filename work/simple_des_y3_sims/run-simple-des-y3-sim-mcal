@@ -31,6 +31,7 @@ for lib in ['simple_des_y3_sims_mcal']:
 @click.option('--seed', type=int, required=True,
               help='the base RNG seed')
 def main(tilename, bands, meds_files, output_desdata, mcal_config_file, seed):
+    """Run metacal on a tile with ngmixer and ngmix."""
     with open(mcal_config_file, 'r') as fp:
         mcal_config = yaml.load(fp, Loader=yaml.Loader)
     mcal_config['jobs']['bands'] = [b for b in bands]

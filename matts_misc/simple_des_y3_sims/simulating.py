@@ -51,6 +51,11 @@ class End2EndSimulation(object):
         Right now these should include:
             type : str
                 One of 'gauss' and that's it.
+
+    Methods
+    -------
+    run()
+        Run the simulation, writing the data to disk.
     """
     def __init__(self, *,
                  seed, output_meds_dir, tilename, bands,

@@ -26,6 +26,14 @@ class PSFWrapper(object):
     -------
     get_rec(row, col)
         Get a reconstruction of the PSF.
+    get_rec_shape(row, col)
+        Get the image shape of a reconstruction of the PSF.
+    getPSF(image_pos)
+        Get the PSF as a galsim.GSObject at a given image position.
+    get_center(row, col)
+        Get the center of the PSF in the stamp/cutout.
+    get_sigma(row, col)
+        Raises a `NotImplementedError`. Here to make sure no code is using it.
     """
     def __init__(self, psf, wcs, n_pix=53):
         self.psf = psf
