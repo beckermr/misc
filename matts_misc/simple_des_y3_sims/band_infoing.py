@@ -1,5 +1,7 @@
 import logging
+import hashlib
 
+import numpy as np
 import yaml
 import desmeds
 
@@ -55,6 +57,17 @@ def make_band_info(*, tilename, bands, output_meds_dir):
             )
         info = prep.coadd.get_info()
         add_extra_des_coadd_tile_info(info=info, piff_run=cfg['piff_run'])
+
+        # build hashes and sort
+        hashes = []
+        for i in range(len(info['src_info'])):
+            hash_str = "%s%s" % (
+                info['src_info'][i]['expnum'],
+                info['src_info'][i]['ccdnum'])
+            hashes.append(hashlib.md5(hash_str.encode('utf-8')).hexdigest())
+        inds = np.argsort(hashes)
+        new_src_info = [info['src_info'][i] for i in inds]
+        info['src_info'] = new_src_info
 
         make_dirs_for_file(band_info_file)
         with open(band_info_file, 'w') as fp:

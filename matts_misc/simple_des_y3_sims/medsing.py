@@ -42,7 +42,7 @@ def make_meds_files(*, tilename, bands, output_meds_dir, psf_kws, meds_config):
 
     # force this
     meds_config['magzp_ref'] = MAGZP_REF
-    meds_config['psf_type'] = 'psfex'
+    meds_config['psf'] = {'type': 'psfex'}
     meds_config['use_joblib'] = True
 
     # read info files
@@ -113,12 +113,12 @@ def make_meds_files(*, tilename, bands, output_meds_dir, psf_kws, meds_config):
 
 
 def _build_psf_data(*, info, psf_kws, output_meds_dir):
-    def _load_psf_data(_info):
+    def _load_psf_data(_info, force_gauss=False):
         wcs = get_galsim_wcs(
             image_path=_info['image_path'].replace(
                 '$MEDS_DIR', output_meds_dir),
             image_ext=_info['image_ext'])
-        if psf_kws['type'] == 'gauss' or 'piff_path' not in _info:
+        if psf_kws['type'] == 'gauss' or force_gauss:
             return PSFWrapper(galsim.Gaussian(fwhm=0.9), wcs)
         elif psf_kws['type'] == 'piff':
             from .des_piff import DES_Piff
@@ -127,7 +127,7 @@ def _build_psf_data(*, info, psf_kws, output_meds_dir):
         else:
             raise ValueError("psf type '%s' is not valid!" % psf_kws['type'])
 
-    psf_data = [_load_psf_data(info)]
+    psf_data = [_load_psf_data(info, force_gauss=True)]
     for se_info in info['src_info']:
         psf_data.append(_load_psf_data(se_info))
     return psf_data

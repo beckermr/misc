@@ -88,5 +88,9 @@ c = g2/R22
 m_err = np.std(marr)
 c_err = np.std(carr)
 
-print("m: %f +/- %f" % (m, m_err))
-print("c: %f +/- %f" % (c, c_err))
+if np.abs(m) > 0.01:
+    print("m: %f +/- %f" % (m, m_err))
+    print("c: %f +/- %f" % (c, c_err))
+else:
+    print("m [1e-3]: %f +/- %f" % (m/1e-3, m_err/1e-3))
+    print("c [1e-4]: %f +/- %f" % (c/1e-4, c_err/1e-4))

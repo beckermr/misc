@@ -1,8 +1,10 @@
+from functools import lru_cache
 import fitsio
 import esutil.wcsutil
 import galsim
 
 
+@lru_cache(maxsize=256)
 def get_esutil_wcs(*, image_path, image_ext):
     """Read the WCS solution of an image into an esutil.wcsutil.WCS object.
 
@@ -24,6 +26,7 @@ def get_esutil_wcs(*, image_path, image_ext):
     return esutil.wcsutil.WCS(hd)
 
 
+@lru_cache(maxsize=256)
 def get_galsim_wcs(*, image_path, image_ext):
     """Read the WCS solution of an image into a galsim WCS object.
 

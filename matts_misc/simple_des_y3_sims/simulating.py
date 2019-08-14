@@ -117,17 +117,15 @@ class End2EndSimulation(object):
         jobs = []
         for noise_seed, se_info in zip(
                 noise_seeds, self.info[band]['src_info']):
-            _psf_closure = self._make_psf_closure(se_info=se_info)
 
-            g1 = self.gal_kws['g1']
-            g2 = self.gal_kws['g2']
-
-            def obj_func(ind, truth_cat, pos):
-                obj = galsim.Exponential(half_light_radius=0.5).withFlux(64000)
-                obj = obj.shear(g1=g1, g2=g2)
-                psf = _psf_closure(pos)
-                obj = galsim.Convolve([obj, psf])
-                return obj
+            src_func = LazySourceCat(
+                truth_cat=truth_cat,
+                wcs=get_galsim_wcs(
+                    image_path=se_info['image_path'],
+                    image_ext=se_info['image_ext']),
+                psf=self._make_psf_wrapper(se_info=se_info),
+                g1=self.gal_kws['g1'],
+                g2=self.gal_kws['g2'])
 
             jobs.append(joblib.delayed(_render_se_image)(
                 se_info=se_info,
@@ -137,33 +135,29 @@ class End2EndSimulation(object):
                 draw_method=self.draw_method,
                 noise_seed=noise_seed,
                 output_meds_dir=self.output_meds_dir,
-                obj_func=obj_func))
+                src_func=src_func))
 
         with joblib.Parallel(
                 n_jobs=-1, backend='loky', verbose=50, max_nbytes=None) as p:
             p(jobs)
 
-    def _make_psf_closure(self, *, se_info):
+    def _make_psf_wrapper(self, *, se_info):
         if self.psf_kws['type'] == 'gauss':
-            def _psf_closure(pos):
-                return galsim.Gaussian(fwhm=0.9)
+            psf_model = galsim.Gaussian(fwhm=0.9)
         elif self.psf_kws['type'] == 'piff':
             from .des_piff import DES_Piff
             from .psf_wrapper import PSFWrapper
-
-            piff_model = DES_Piff(expand_path(se_info['piff_path']))
-            wcs = get_galsim_wcs(
-                image_path=se_info['image_path'],
-                image_ext=se_info['image_ext'])
-            psf_wrap = PSFWrapper(piff_model, wcs)
-
-            def _psf_closure(pos):
-                return psf_wrap.getPSF(image_pos=pos)
+            psf_model = DES_Piff(expand_path(se_info['piff_path']))
         else:
             raise ValueError(
                 "psf type '%s' not recognized!" % self.psf_kws['type'])
 
-        return _psf_closure
+        wcs = get_galsim_wcs(
+            image_path=se_info['image_path'],
+            image_ext=se_info['image_ext'])
+        psf_wrap = PSFWrapper(psf_model, wcs)
+
+        return psf_wrap
 
     def _make_truth_catalog(self):
         """Make the truth catalog."""
@@ -203,7 +197,7 @@ class End2EndSimulation(object):
 
 def _render_se_image(
         *, se_info, band, truth_cat, bounds_buffer_uv,
-        draw_method, noise_seed, output_meds_dir, obj_func):
+        draw_method, noise_seed, output_meds_dir, src_func):
     """Render an SE image.
 
     This function renders a full image and writes it to disk.
@@ -229,10 +223,10 @@ def _render_se_image(
         The RNG seed to use to generate the noise field for the image.
     output_meds_dir : str
         The output DEADATA/MEDS_DIR for the simulation data products.
-    obj_func : callable
-        A function with signature `obj_func(src_ind, truth_cat, pos)` that
-        returns the galsim object to be rendered for a given index of the
-        truth catalog and its image position `pos`.
+    src_func : callable
+        A function with signature `src_func(src_ind)` that
+        returns the galsim object to be rendered and image position
+        for a given index of the truth catalog.
     """
 
     # step 1 - get the set of good objects for the CCD
@@ -247,7 +241,7 @@ def _render_se_image(
         truth_cat=truth_cat,
         se_info=se_info,
         band=band,
-        obj_func=obj_func,
+        src_func=src_func,
         draw_method=draw_method)
 
     # step 3 - add bkg and noise
@@ -284,26 +278,17 @@ def _cut_tuth_cat_to_se_image(*, truth_cat, se_info, bounds_buffer_uv):
 
 
 def _render_all_objects(
-        *, msk_inds, truth_cat, se_info, band, obj_func, draw_method):
+        *, msk_inds, truth_cat, se_info, band, src_func, draw_method):
     gs_wcs = get_galsim_wcs(
         image_path=se_info['image_path'],
         image_ext=se_info['image_ext'])
-
-    def _src_func(ind):
-        pos = gs_wcs.toImage(galsim.CelestialCoord(
-            ra=truth_cat['ra'][ind] * galsim.degrees,
-            dec=truth_cat['dec'][ind] * galsim.degrees))
-
-        obj = obj_func(ind, truth_cat, pos)
-
-        return obj, pos
 
     im = render_sources_for_image(
         image_shape=se_info['image_shape'],
         wcs=gs_wcs,
         draw_method=draw_method,
         src_inds=msk_inds,
-        src_func=_src_func,
+        src_func=src_func,
         n_jobs=1)
 
     return im.array
@@ -367,3 +352,43 @@ def _write_se_img_wgt_bkg(
         # open in read-write mode and replace the data
         with fitsio.FITS(sf.path, mode='rw') as fits:
             fits[se_info['bkg_ext']].write(background)
+
+
+class LazySourceCat(object):
+    """A lazy source catalog that only builds objects to be rendered as they
+    are needed.
+
+    Parameters
+    ----------
+    truth_cat : structured np.array
+        The truth catalog as a structured numpy array.
+    wcs : galsim.GSFitsWCS
+        A galsim WCS instance for the image to be rendered.
+    psf : PSFWrapper
+        A PSF wrapper object to use for the PSF.
+    g1 : float
+        The shear to apply on the 1-axis.
+    g2 : float
+        The shear to apply on the 2-axis.
+
+    Methods
+    -------
+    __call__(ind)
+        Returns the object to be rendered from the truth catalog at
+        index `ind`.
+    """
+    def __init__(self, *, truth_cat, wcs, psf, g1, g2):
+        self.truth_cat = truth_cat
+        self.wcs = wcs
+        self.psf = psf
+        self.g1 = g1
+        self.g2 = g2
+
+    def __call__(self, ind):
+        pos = self.wcs.toImage(galsim.CelestialCoord(
+            ra=self.truth_cat['ra'][ind] * galsim.degrees,
+            dec=self.truth_cat['dec'][ind] * galsim.degrees))
+        obj = galsim.Exponential(half_light_radius=0.5).withFlux(64000)
+        obj = obj.shear(g1=self.g1, g2=self.g2)
+        psf = self.psf.getPSF(image_pos=pos)
+        return galsim.Convolve([obj, psf]), pos
