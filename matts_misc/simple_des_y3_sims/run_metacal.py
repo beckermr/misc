@@ -5,6 +5,7 @@ import joblib
 import esutil as eu
 import fitsio
 from ngmix import ObsList, MultiBandObsList
+from ngmix.gexceptions import GMixRangeError
 from .ngmix_compat import NGMixMEDS, MultiBandNGMixMEDS, NGMIX_V1
 
 from .files import get_meds_file_path, get_mcal_file_path, make_dirs_for_file
@@ -202,8 +203,12 @@ def _run_mcal_one_chunk(meds_files, start, end, seed):
             nband = len(o)
             mcal = MetacalFitter(CONFIG, nband, rng)
 
-            mcal.go([o])
-            res = mcal.result
+            try:
+                mcal.go([o])
+                res = mcal.result
+            except GMixRangeError as e:
+                logger.debug(" metacal error: %s", str(e))
+                res = None
 
             if res is not None:
                 data.append(res)
