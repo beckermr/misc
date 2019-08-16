@@ -7,16 +7,23 @@ class GaussPixPSF(object):
 
     Parameters
     ----------
-    seed : int, optional
+    scale : float, optional
+        The pixel scale to use for the pixelized PSF.
+    gstd : float, optional
+        The standard deviation of the Gaussian distribution for drawing the
+        PSF shape.
+    fwhm_frac_std : float, optional
+        The fractional range allowed for deviations in the PSF FWHM.
+    s2n : float, optional
+        If not `None`, this option forces the code to add noise to the PSF
+        image so that it has total S/N `s2n`.
 
     Methods
     -------
     getPSF(image_pos)
         Get the PSF represented as an interpolated image at a point.
     """
-    def __init__(self, *, seed=10, scale=0.263, gstd=0.01, fwhm_frac_std=0.1,
-                 s2n=None):
-        self.seed = seed
+    def __init__(self, *, scale=0.263, gstd=0.01, fwhm_frac_std=0.1, s2n=None):
         self.scale = scale
         self.gstd = gstd
         self.fwhm_frac_std = fwhm_frac_std
