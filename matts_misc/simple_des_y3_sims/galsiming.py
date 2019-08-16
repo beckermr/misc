@@ -35,24 +35,6 @@ def render_sources_for_image(
         The full image with all of the sources rendered.
     """
 
-    def _render_list(inds):
-        im = galsim.ImageD(nrow=image_shape[0], ncol=image_shape[1])
-        for ind in inds:
-            # draw
-            src, pos = src_func(ind)
-            stamp = render_source_in_image(
-                source=src,
-                local_wcs=wcs.local(image_pos=pos),
-                image_pos=pos,
-                draw_method=draw_method)
-
-            # intersect and add to total image
-            overlap = stamp.bounds & im.bounds
-            if overlap.area() > 0:
-                im[overlap] += stamp[overlap]
-
-        return im
-
     if n_jobs is None:
         n_jobs = joblib.externals.loky.cpu_count()
     n_srcs_per_job = int(np.ceil(len(src_inds) / n_jobs))
@@ -61,7 +43,8 @@ def render_sources_for_image(
     for job_ind in range(n_jobs):
         start = job_ind * n_srcs_per_job
         end = min(start + n_srcs_per_job, len(src_inds))
-        jobs.append(joblib.delayed(_render_list)(src_inds[start:end]))
+        jobs.append(joblib.delayed(_render_list)(
+            src_inds[start:end], wcs, draw_method, image_shape, src_func))
 
     with joblib.Parallel(n_jobs=n_jobs, backend='loky', verbose=0) as p:
         outputs = p(jobs)
@@ -71,6 +54,25 @@ def render_sources_for_image(
     if len(outputs) > 1:
         for o in outputs[1:]:
             im += o
+
+    return im
+
+
+def _render_list(inds, wcs, draw_method, image_shape, src_func):
+    im = galsim.ImageD(nrow=image_shape[0], ncol=image_shape[1])
+    for ind in inds:
+        # draw
+        src, pos = src_func(ind)
+        stamp = render_source_in_image(
+            source=src,
+            local_wcs=wcs.local(image_pos=pos),
+            image_pos=pos,
+            draw_method=draw_method)
+
+        # intersect and add to total image
+        overlap = stamp.bounds & im.bounds
+        if overlap.area() > 0:
+            im[overlap] += stamp[overlap]
 
     return im
 

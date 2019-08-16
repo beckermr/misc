@@ -126,7 +126,8 @@ def _build_psf_data(*, info, psf_kws, output_meds_dir):
             return PSFWrapper(piff_model, wcs)
         elif psf_kws['type'] == 'gauss-pix':
             from .gauss_pix_psf import GaussPixPSF
-            psf_model = GaussPixPSF(s2n=psf_kws.get('s2n', None))
+            kwargs = {k: psf_kws[k] for k in psf_kws if k != 'type'}
+            psf_model = GaussPixPSF(**kwargs)
             return PSFWrapper(psf_model, wcs)
         else:
             raise ValueError("psf type '%s' is not valid!" % psf_kws['type'])

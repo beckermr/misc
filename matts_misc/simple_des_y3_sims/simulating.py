@@ -148,9 +148,12 @@ class End2EndSimulation(object):
         elif self.psf_kws['type'] == 'piff':
             from .des_piff import DES_Piff
             psf_model = DES_Piff(expand_path(se_info['piff_path']))
+            assert self.draw_method == 'no_pixel'
         elif self.psf_kws['type'] == 'gauss-pix':
             from .gauss_pix_psf import GaussPixPSF
-            psf_model = GaussPixPSF(s2n=self.psf_kws.get('s2n', None))
+            kwargs = {k: self.psf_kws[k] for k in self.psf_kws if k != 'type'}
+            psf_model = GaussPixPSF(**kwargs)
+            assert self.draw_method == 'no_pixel'
         else:
             raise ValueError(
                 "psf type '%s' not recognized!" % self.psf_kws['type'])
