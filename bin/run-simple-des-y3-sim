@@ -33,12 +33,15 @@ def cli():
                     'a concatnated string (e.g., "riz")'))
 @click.option('--output-desdata', type=str, required=True,
               help='the output DESDATA directory')
-def prep(tilename, bands, output_desdata):
+@click.option('--n-files', type=int, default=None,
+              help='number of SE images to keep - useful for testing')
+def prep(tilename, bands, output_desdata, n_files):
     """Prepare a tile for simulating."""
     make_band_info(
         tilename=tilename,
         bands=[b for b in bands],
-        output_meds_dir=output_desdata)
+        output_meds_dir=output_desdata,
+        n_files=n_files)
 
 
 @cli.command()

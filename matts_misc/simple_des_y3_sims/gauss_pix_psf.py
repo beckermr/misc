@@ -1,0 +1,59 @@
+import numpy as np
+import galsim
+
+
+class GaussPixPSF(object):
+    """A pixelized Gaussian PSF.
+
+    Parameters
+    ----------
+    seed : int, optional
+
+    Methods
+    -------
+    getPSF(image_pos)
+        Get the PSF represented as an interpolated image at a point.
+    """
+    def __init__(self, *, seed=10, scale=0.263, gstd=0.01, fwhm_frac_std=0.1,
+                 s2n=None):
+        self.seed = seed
+        self.scale = scale
+        self.gstd = gstd
+        self.fwhm_frac_std = fwhm_frac_std
+        self.s2n = s2n
+
+    def getPSF(self, image_pos):
+        """Get the PSF as an InterpolatedImage
+
+        Parameters
+        ----------
+        image_pos : galsim.PositionD
+            The image position at which to draw the PSF model.
+
+        Returns
+        -------
+        psf : galsim.InterpolatedImage
+            The PSF model.
+        """
+        # we seed with the nearest pixel to make things reproducible
+        seed = int(image_pos.x + 0.5) * 4096 + int(image_pos.y + 0.5)
+        rng = np.random.RandomState(seed=seed)
+
+        g1 = rng.normal() * self.gstd
+        g2 = rng.normal() * self.gstd
+        fwhm = (
+            rng.uniform(low=-self.fwhm_frac_std, high=self.fwhm_frac_std) +
+            1.0) * 0.9
+        psf = galsim.Gaussian(fwhm=fwhm).shear(g1=g1, g2=g2).withFlux(1.0)
+        psf_im = psf.drawImage(nx=53, ny=53, scale=self.scale).array
+
+        if self.s2n is not None:
+            noise_std = np.sqrt(np.sum(psf_im**2)/self.s2n**2)
+            psf_im += (rng.normal(size=psf_im.shape) * noise_std)
+
+        psf = galsim.InterpolatedImage(
+            galsim.ImageD(psf_im),
+            scale=self.scale,
+            x_interpolant='lanczos15',
+            )
+        return psf

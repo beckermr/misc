@@ -1,0 +1,12 @@
+gal_kws:
+  type: exp
+  n_grid: 3 #00
+  g1: 0.02
+  g2: 0.0
+
+psf_kws:
+  type: gauss-pix
+  s2n: null
+
+true_detection:
+  box_size: 32

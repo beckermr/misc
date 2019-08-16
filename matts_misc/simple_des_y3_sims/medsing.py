@@ -124,10 +124,15 @@ def _build_psf_data(*, info, psf_kws, output_meds_dir):
             from .des_piff import DES_Piff
             piff_model = DES_Piff(expand_path(_info['piff_path']))
             return PSFWrapper(piff_model, wcs)
+        elif psf_kws['type'] == 'gauss-pix':
+            from .gauss_pix_psf import GaussPixPSF
+            psf_model = GaussPixPSF(s2n=psf_kws.get('s2n', None))
+            return PSFWrapper(psf_model, wcs)
         else:
             raise ValueError("psf type '%s' is not valid!" % psf_kws['type'])
 
-    psf_data = [_load_psf_data(info, force_gauss=True)]
+    force_gauss = psf_kws['type'] in ['piff']
+    psf_data = [_load_psf_data(info, force_gauss=force_gauss)]
     for se_info in info['src_info']:
         psf_data.append(_load_psf_data(se_info))
     return psf_data

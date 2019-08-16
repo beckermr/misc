@@ -2,6 +2,7 @@ import galsim
 import galsim.des
 
 from .des_piff import DES_Piff
+from .gauss_pix_psf import GaussPixPSF
 
 
 class PSFWrapper(object):
@@ -79,6 +80,8 @@ class PSFWrapper(object):
         elif isinstance(self.psf, DES_Piff):
             wcs = self.wcs.local(image_pos)
             return self.psf.getPSF(image_pos, wcs)
+        elif isinstance(self.psf, GaussPixPSF):
+            return self.psf.getPSF(image_pos)
         else:
             raise ValueError(
                 'We did not recognize the PSF type! %s' % self.psf)
@@ -115,6 +118,11 @@ class PSFWrapper(object):
                 method='no_pixel').array
         elif isinstance(self.psf, DES_Piff):
             psf_at_pos = self.psf.getPSF(im_pos, wcs)
+            psf_im = psf_at_pos.drawImage(
+                wcs=wcs, nx=self.n_pix, ny=self.n_pix,
+                method='no_pixel').array
+        elif isinstance(self.psf, GaussPixPSF):
+            psf_at_pos = self.psf.getPSF(im_pos)
             psf_im = psf_at_pos.drawImage(
                 wcs=wcs, nx=self.n_pix, ny=self.n_pix,
                 method='no_pixel').array

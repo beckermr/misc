@@ -14,7 +14,7 @@ from .des_info import add_extra_des_coadd_tile_info
 logger = logging.getLogger(__name__)
 
 
-def make_band_info(*, tilename, bands, output_meds_dir):
+def make_band_info(*, tilename, bands, output_meds_dir, n_files=None):
     """Make YAML files with the information on each band.
 
     Parameters
@@ -25,6 +25,9 @@ def make_band_info(*, tilename, bands, output_meds_dir):
         A list of bands to process (e.g., `['r', 'i', 'z']`).
     output_meds_dir : str
         The DESDATA/MEDS_DIR path where the info file should be written.
+    n_files : int, optional
+        If not `None`, then only keep this many files for the sources. Useful
+        for testing.
 
     Returns
     -------
@@ -68,6 +71,9 @@ def make_band_info(*, tilename, bands, output_meds_dir):
         inds = np.argsort(hashes)
         new_src_info = [info['src_info'][i] for i in inds]
         info['src_info'] = new_src_info
+
+        if n_files is not None:
+            info['src_info'] = info['src_info'][:n_files]
 
         make_dirs_for_file(band_info_file)
         with open(band_info_file, 'w') as fp:

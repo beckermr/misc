@@ -19,6 +19,7 @@ from .truthing import make_coadd_grid_radec
 from .sky_bounding import get_rough_sky_bounds, radec_to_uv
 from .wcsing import get_esutil_wcs, get_galsim_wcs
 from .galsiming import render_sources_for_image
+from .psf_wrapper import PSFWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ class End2EndSimulation(object):
         # will be rendered for that CCD
         self.bounds_buffer_uv = 128 * 0.263
 
-        if self.psf_kws['type'] in ['piff', 'psfex']:
+        if self.psf_kws['type'] in ['piff', 'psfex', 'gauss-pix']:
             self.draw_method = 'no_pixel'
         else:
             self.draw_method = 'auto'
@@ -146,8 +147,10 @@ class End2EndSimulation(object):
             psf_model = galsim.Gaussian(fwhm=0.9)
         elif self.psf_kws['type'] == 'piff':
             from .des_piff import DES_Piff
-            from .psf_wrapper import PSFWrapper
             psf_model = DES_Piff(expand_path(se_info['piff_path']))
+        elif self.psf_kws['type'] == 'gauss-pix':
+            from .gauss_pix_psf import GaussPixPSF
+            psf_model = GaussPixPSF(s2n=self.psf_kws.get('s2n', None))
         else:
             raise ValueError(
                 "psf type '%s' not recognized!" % self.psf_kws['type'])
