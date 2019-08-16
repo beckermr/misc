@@ -37,6 +37,7 @@ class GaussPixPSF(object):
         """
         # we seed with the nearest pixel to make things reproducible
         seed = int(image_pos.x + 0.5) * 4096 + int(image_pos.y + 0.5)
+        seed = seed % 2**30
         rng = np.random.RandomState(seed=seed)
 
         g1 = rng.normal() * self.gstd
