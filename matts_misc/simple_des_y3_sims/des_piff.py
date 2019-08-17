@@ -60,7 +60,7 @@ class DES_Piff(object):
             offset=(-dx, -dy))
 
         psf = galsim.InterpolatedImage(
-            psf,
+            galsim.ImageD(psf.array),  # make sure galsim is not keeping state
             wcs=wcs.local(image_pos),
             gsparams=gsparams,
             x_interpolant=x_interpolant

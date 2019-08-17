@@ -106,7 +106,7 @@ class PSFWrapper(object):
         """
         # we add 1 to the positions here since the MEDS code uses
         # zero offset positions and galsim + DES stuff expects one-offset
-        im_pos = galsim.PositionD(col+1, row+1)
+        im_pos = galsim.PositionD(x=col+1, y=row+1)
         wcs = self.wcs.local(im_pos)
         if isinstance(self.psf, galsim.GSObject):
             psf_im = self.psf.drawImage(

@@ -64,5 +64,5 @@ class GaussPixPSF(object):
             galsim.ImageD(psf_im),
             wcs=wcs,
             x_interpolant='lanczos15',
-            )
+            ).withFlux(1.0)
         return psf

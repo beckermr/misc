@@ -88,6 +88,7 @@ c = g2/R22
 m_err = np.std(marr)
 c_err = np.std(carr)
 
+print('nobj:', n_obj)
 if np.abs(m) > 0.01:
     print("m: %f +/- %f" % (m, m_err))
     print("c: %f +/- %f" % (c, c_err))
