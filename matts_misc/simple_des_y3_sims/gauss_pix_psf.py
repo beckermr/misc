@@ -7,8 +7,6 @@ class GaussPixPSF(object):
 
     Parameters
     ----------
-    scale : float, optional
-        The pixel scale to use for the pixelized PSF.
     gstd : float, optional
         The standard deviation of the Gaussian distribution for drawing the
         PSF shape.
@@ -23,25 +21,28 @@ class GaussPixPSF(object):
     getPSF(image_pos)
         Get the PSF represented as an interpolated image at a point.
     """
-    def __init__(self, *, scale=0.263, gstd=0.01, fwhm_frac_std=0.1, s2n=None):
-        self.scale = scale
+    def __init__(self, *, gstd=0.01, fwhm_frac_std=0.1, s2n=None):
         self.gstd = gstd
         self.fwhm_frac_std = fwhm_frac_std
         self.s2n = s2n
 
-    def getPSF(self, image_pos):
+    def getPSF(self, image_pos, wcs):
         """Get the PSF as an InterpolatedImage
 
         Parameters
         ----------
         image_pos : galsim.PositionD
             The image position at which to draw the PSF model.
+        wcs : galsim.BaseWCS or subclass
+            The WCS to use to draw the PSF.
 
         Returns
         -------
         psf : galsim.InterpolatedImage
             The PSF model.
         """
+        wcs = wcs.local(image_pos)
+
         # we seed with the nearest pixel to make things reproducible
         seed = int(image_pos.x + 0.5) * 4096 + int(image_pos.y + 0.5)
         seed = seed % 2**30
@@ -53,7 +54,7 @@ class GaussPixPSF(object):
             rng.uniform(low=-self.fwhm_frac_std, high=self.fwhm_frac_std) +
             1.0) * 0.9
         psf = galsim.Gaussian(fwhm=fwhm).shear(g1=g1, g2=g2).withFlux(1.0)
-        psf_im = psf.drawImage(nx=53, ny=53, scale=self.scale).array
+        psf_im = psf.drawImage(nx=53, ny=53, wcs=wcs).array
 
         if self.s2n is not None:
             noise_std = np.sqrt(np.sum(psf_im**2)/self.s2n**2)
@@ -61,7 +62,7 @@ class GaussPixPSF(object):
 
         psf = galsim.InterpolatedImage(
             galsim.ImageD(psf_im),
-            scale=self.scale,
+            wcs=wcs,
             x_interpolant='lanczos15',
             )
         return psf
