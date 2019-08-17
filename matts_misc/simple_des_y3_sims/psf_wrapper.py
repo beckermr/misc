@@ -81,7 +81,8 @@ class PSFWrapper(object):
             wcs = self.wcs.local(image_pos)
             return self.psf.getPSF(image_pos, wcs)
         elif isinstance(self.psf, GaussPixPSF):
-            return self.psf.getPSF(image_pos)
+            wcs = self.wcs.local(image_pos)
+            return self.psf.getPSF(image_pos, wcs)
         else:
             raise ValueError(
                 'We did not recognize the PSF type! %s' % self.psf)
