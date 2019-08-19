@@ -74,17 +74,19 @@ s2n_cut = 10.0
 size_cut = 0.5
 
 n_jack = 100
+if n_jack > n_obj:
+    n_jack = n_obj // 10
 
 marr = []
 carr = []
 rng = np.random.RandomState(seed=10)
 n_per_sample = n_obj // n_jack
 sinds = np.argsort(rng.uniform(size=n_obj))
+msk = np.ones(n_obj, dtype=np.bool)
 loc = 0
 for _ in tqdm.trange(n_jack):
-    inds = sinds[loc:loc+n_per_sample]
-    msk = np.ones(n_obj, dtype=np.bool)
-    msk[inds] = False
+    msk[:] = True
+    msk[sinds[loc:loc+n_per_sample]] = False
     g1, g2, R11, R22 = _measure_R(d[msk], s2n_cut=s2n_cut, size_cut=size_cut)
     marr.append(g1/R11 / 0.02 - 1.0)
     carr.append(g2/R22)
@@ -99,6 +101,7 @@ m_err = np.sqrt((n_jack - 1)/n_jack * np.sum((marr - m)**2))
 c_err = np.sqrt((n_jack - 1)/n_jack * np.sum((carr - c)**2))
 
 print('nobj:', n_obj)
+print('njack:', n_jack)
 if np.abs(m) > 0.01:
     print("m: %f +/- %f" % (m, m_err))
     print("c: %f +/- %f" % (c, c_err))
