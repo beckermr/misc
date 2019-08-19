@@ -71,7 +71,7 @@ class End2EndSimulation(object):
         # will be rendered for that CCD
         self.bounds_buffer_uv = 128 * 0.263
 
-        if self.psf_kws['type'] in ['piff', 'psfex', 'gauss-pix']:
+        if self.psf_kws['type'] in ['piff', 'psfex']:
             self.draw_method = 'no_pixel'
         else:
             self.draw_method = 'auto'
@@ -153,7 +153,7 @@ class End2EndSimulation(object):
             from .gauss_pix_psf import GaussPixPSF
             kwargs = {k: self.psf_kws[k] for k in self.psf_kws if k != 'type'}
             psf_model = GaussPixPSF(**kwargs)
-            assert self.draw_method == 'no_pixel'
+            assert self.draw_method == 'auto'
         else:
             raise ValueError(
                 "psf type '%s' not recognized!" % self.psf_kws['type'])

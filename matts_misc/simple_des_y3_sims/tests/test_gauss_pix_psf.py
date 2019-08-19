@@ -13,7 +13,7 @@ from ..gauss_pix_psf import GaussPixPSF
 def test_gauss_pix_psf_smoke(wcs):
     psf_model = GaussPixPSF()
     psf = psf_model.getPSF(galsim.PositionD(x=1, y=2), wcs)
-    psf_im = psf.drawImage(nx=53, ny=53, wcs=wcs, method='no_pixel').array
+    psf_im = psf.drawImage(nx=53, ny=53, wcs=wcs).array
 
     seed = 4098
     rng = np.random.RandomState(seed=seed)
@@ -23,18 +23,18 @@ def test_gauss_pix_psf_smoke(wcs):
     gs = galsim.Gaussian(fwhm=fwhm).shear(g1=g1, g2=g2).withFlux(1.0)
     test_im = gs.drawImage(nx=53, ny=53, wcs=wcs).array
 
-    assert np.allclose(psf_im, test_im, atol=1e-5, rtol=0)
+    assert np.allclose(psf_im, test_im, atol=2e-5, rtol=0)
 
 
 def test_gauss_pix_psf_reproducible():
     wcs = galsim.PixelScale(0.5)
     psf_model = GaussPixPSF()
     psf = psf_model.getPSF(galsim.PositionD(x=1, y=2), wcs)
-    psf_im1 = psf.drawImage(nx=53, ny=53, scale=0.263, method='no_pixel').array
+    psf_im1 = psf.drawImage(nx=53, ny=53, scale=0.263).array
 
     psf_model = GaussPixPSF()
     psf = psf_model.getPSF(galsim.PositionD(x=1, y=2), wcs)
-    psf_im2 = psf.drawImage(nx=53, ny=53, scale=0.263, method='no_pixel').array
+    psf_im2 = psf.drawImage(nx=53, ny=53, scale=0.263).array
 
     assert np.allclose(psf_im1, psf_im2)
 
@@ -43,7 +43,7 @@ def test_gauss_pix_psf_s2n():
     wcs = galsim.PixelScale(0.263)
     psf_model = GaussPixPSF(s2n=100)
     psf = psf_model.getPSF(galsim.PositionD(x=1, y=2), wcs)
-    psf_im = psf.drawImage(nx=53, ny=53, scale=0.263, method='no_pixel').array
+    psf_im = psf.drawImage(nx=53, ny=53, scale=0.263).array
 
     seed = 4098
     rng = np.random.RandomState(seed=seed)
@@ -54,4 +54,6 @@ def test_gauss_pix_psf_s2n():
     test_im = gs.drawImage(nx=53, ny=53, scale=0.263).array
 
     noise_std = np.sqrt(np.sum(test_im**2)/100**2)
-    assert np.allclose(np.std(psf_im - test_im), noise_std, atol=1e-4, rtol=0)
+    nse = np.std(psf_im - test_im)
+    assert nse < noise_std
+    assert nse > 0

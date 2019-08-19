@@ -125,8 +125,7 @@ class PSFWrapper(object):
         elif isinstance(self.psf, GaussPixPSF):
             psf_at_pos = self.psf.getPSF(im_pos, wcs)
             psf_im = psf_at_pos.drawImage(
-                wcs=wcs, nx=self.n_pix, ny=self.n_pix,
-                method='no_pixel').array
+                wcs=wcs, nx=self.n_pix, ny=self.n_pix).array
         else:
             raise ValueError(
                 'We did not recognize the PSF type! %s' % self.psf)
