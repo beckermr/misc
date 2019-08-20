@@ -6,7 +6,7 @@ gal_kws:
 
 psf_kws:
   type: gauss-pix
-  gstr: 0.0
+  gstd: 0.0
   fwhm_frac_std: 0.0
 
 true_detection:
