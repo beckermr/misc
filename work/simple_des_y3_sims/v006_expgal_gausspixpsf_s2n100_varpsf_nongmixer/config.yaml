@@ -6,6 +6,7 @@ gal_kws:
 
 psf_kws:
   type: gauss-pix
+  s2n: 100
 
 true_detection:
   box_size: 32
