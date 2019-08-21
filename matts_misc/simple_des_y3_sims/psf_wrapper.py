@@ -75,8 +75,6 @@ class PSFWrapper(object):
         """
         if isinstance(self.psf, galsim.GSObject):
             return self.psf
-        elif isinstance(self.psf, galsim.des.DES_PSFEx):
-            return self.psf.getPSF(image_pos)
         elif isinstance(self.psf, DES_Piff):
             wcs = self.wcs.local(image_pos)
             return self.psf.getPSF(image_pos, wcs)
@@ -112,16 +110,10 @@ class PSFWrapper(object):
             psf_im = self.psf.drawImage(
                 nx=self.n_pix, ny=self.n_pix,
                 wcs=wcs).array
-        elif isinstance(self.psf, galsim.des.DES_PSFEx):
-            psf_at_pos = self.psf.getPSF(im_pos)
-            psf_im = psf_at_pos.drawImage(
-                wcs=wcs, nx=self.n_pix, ny=self.n_pix,
-                method='no_pixel').array
         elif isinstance(self.psf, DES_Piff):
             psf_at_pos = self.psf.getPSF(im_pos, wcs)
             psf_im = psf_at_pos.drawImage(
-                wcs=wcs, nx=self.n_pix, ny=self.n_pix,
-                method='no_pixel').array
+                wcs=wcs, nx=self.n_pix, ny=self.n_pix).array
         elif isinstance(self.psf, GaussPixPSF):
             psf_at_pos = self.psf.getPSF(im_pos, wcs)
             psf_im = psf_at_pos.drawImage(

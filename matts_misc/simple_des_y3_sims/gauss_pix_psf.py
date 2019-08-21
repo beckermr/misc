@@ -55,7 +55,7 @@ class GaussPixPSF(object):
             1.0) * 0.9
         psf = galsim.Gaussian(fwhm=fwhm).shear(g1=g1, g2=g2).withFlux(1.0)
         psf_im = psf.drawImage(
-            nx=53, ny=53, scale=0.25, method='no_pixel').array
+            nx=69, ny=69, scale=0.125, method='no_pixel').array
 
         if self.s2n is not None:
             noise_std = np.sqrt(np.sum(psf_im**2)/self.s2n**2)
@@ -63,6 +63,6 @@ class GaussPixPSF(object):
 
         psf = galsim.InterpolatedImage(
             galsim.ImageD(psf_im),
-            scale=0.25,
+            scale=0.125,
             ).withFlux(1.0)
         return psf

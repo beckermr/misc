@@ -71,10 +71,7 @@ class End2EndSimulation(object):
         # will be rendered for that CCD
         self.bounds_buffer_uv = 128 * 0.263
 
-        if self.psf_kws['type'] in ['piff', 'psfex']:
-            self.draw_method = 'no_pixel'
-        else:
-            self.draw_method = 'auto'
+        self.draw_method = 'auto'
 
         # make the RNGS
         # one for galaxies in the truth catalog
@@ -148,7 +145,7 @@ class End2EndSimulation(object):
         elif self.psf_kws['type'] == 'piff':
             from .des_piff import DES_Piff
             psf_model = DES_Piff(expand_path(se_info['piff_path']))
-            assert self.draw_method == 'no_pixel'
+            assert self.draw_method == 'auto'
         elif self.psf_kws['type'] == 'gauss-pix':
             from .gauss_pix_psf import GaussPixPSF
             kwargs = {k: self.psf_kws[k] for k in self.psf_kws if k != 'type'}

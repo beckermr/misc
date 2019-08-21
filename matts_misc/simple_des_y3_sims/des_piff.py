@@ -44,8 +44,11 @@ class DES_Piff(object):
         psf : galsim.InterpolatedImage
             The PSF at the image position.
         """
+        scale = 0.125
+        pixel_wcs = galsim.PixelScale(scale)
+
         # nice and big image size here cause this has been a problem
-        image = galsim.ImageD(ncol=53, nrow=53, wcs=wcs.local(image_pos))
+        image = galsim.ImageD(ncol=53, nrow=53, wcs=pixel_wcs)
 
         # piff offsets the center of the PSF from the true image
         # center - here we will return a properly centered image by undoing
@@ -61,9 +64,13 @@ class DES_Piff(object):
 
         psf = galsim.InterpolatedImage(
             galsim.ImageD(psf.array),  # make sure galsim is not keeping state
-            wcs=wcs.local(image_pos),
+            wcs=pixel_wcs,
             gsparams=gsparams,
             x_interpolant=x_interpolant
+        )
+
+        psf = galsim.Convolve(
+            [psf, galsim.Deconvolve(galsim.Pixel(scale))]
         ).withFlux(
             1.0
         )
