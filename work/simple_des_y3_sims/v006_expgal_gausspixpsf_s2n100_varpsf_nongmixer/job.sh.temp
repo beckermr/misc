@@ -1,6 +1,6 @@
 #!/bin/bash
 #!/bin/bash
-#SBATCH -J v001-{{ tilename }}
+#SBATCH -J v006-{{ tilename }}
 #SBATCH -p bdw
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
