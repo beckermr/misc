@@ -28,11 +28,11 @@ def test_gauss_pix_psf_smoke(wcs):
 
 def test_gauss_pix_psf_reproducible():
     wcs = galsim.PixelScale(0.5)
-    psf_model = GaussPixPSF()
+    psf_model = GaussPixPSF(s2n=100)
     psf = psf_model.getPSF(galsim.PositionD(x=1, y=2), wcs)
     psf_im1 = psf.drawImage(nx=53, ny=53, scale=0.263).array
 
-    psf_model = GaussPixPSF()
+    psf_model = GaussPixPSF(s2n=100)
     psf = psf_model.getPSF(galsim.PositionD(x=1, y=2), wcs)
     psf_im2 = psf.drawImage(nx=53, ny=53, scale=0.263).array
 
