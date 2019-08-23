@@ -7,13 +7,14 @@ if [[ -n $_CONDOR_SCRATCH_DIR ]]; then
     # and cleans up afterward
     tmpdir=$_CONDOR_SCRATCH_DIR
     export TMPDIR=$tmpdir
+
+    conda activate bnl
 else
     # otherwise use the TMPDIR
     tmpdir='.'
     mkdir -p $tmpdir
 fi
 
-# conda activate bnl
 for seed in `seq $1 $2`
 do
     python run.py ${seed} $tmpdir/out_${1}_${2}_${seed}.pkl
