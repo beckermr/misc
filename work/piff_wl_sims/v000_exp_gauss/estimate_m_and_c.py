@@ -113,7 +113,7 @@ m, msd, c, csd = estimate_m_and_c(pres)
 
 print('s2n:', s2n)
 
-if m < 0.01:
+if np.abs(m) < 0.01:
     print("""\
     # of sims: {n_sims}
     m [1e-3]: {m:f} +/- {msd:f}
