@@ -217,7 +217,7 @@ class MetacalFitter(FitterBase):
             n = Namer(front='mcal', back=mtype)
             if mtype == 'noshear':
                 dt += [
-                    (n('psf_g'), 'f8', 2),
+                    (n('psf_g'), 'f8', (2,)),
                     (n('psf_T'), 'f8'),
                 ]
 
@@ -225,16 +225,16 @@ class MetacalFitter(FitterBase):
                 (n('nfev'), 'i4'),
                 (n('s2n'), 'f8'),
                 (n('s2n_r'), 'f8'),
-                (n('pars'), 'f8', npars),
+                (n('pars'), 'f8', (npars,)),
                 (n('pars_cov'), 'f8', (npars, npars)),
-                (n('g'), 'f8', 2),
+                (n('g'), 'f8', (2,)),
                 (n('g_cov'), 'f8', (2, 2)),
                 (n('T'), 'f8'),
                 (n('T_err'), 'f8'),
                 (n('T_ratio'), 'f8'),
-                (n('flux'), 'f8', nband),
+                (n('flux'), 'f8', (nband,)),
                 (n('flux_cov'), 'f8', (nband, nband)),
-                (n('flux_err'), 'f8', nband),
+                (n('flux_err'), 'f8', (nband,)),
             ]
 
         return dt
