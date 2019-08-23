@@ -10,4 +10,4 @@ jacobian_dict = {
 }
 
 gauss_psf = True
-n_sims = 10
+n_sims = 100
