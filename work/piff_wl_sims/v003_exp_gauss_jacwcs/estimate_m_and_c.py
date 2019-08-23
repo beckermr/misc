@@ -112,12 +112,24 @@ pres = [i for i in itertools.chain.from_iterable(outputs)]
 m, msd, c, csd = estimate_m_and_c(pres)
 
 print('s2n:', s2n)
-print("""\
-# of sims: {n_sims}
-m       : {m:f} +/- {msd:f}
-c       : {c:f} +/- {csd:f}""".format(
-    n_sims=len(pres),
-    m=m,
-    msd=msd,
-    c=c,
-    csd=csd), flush=True)
+
+if m < 0.01:
+    print("""\
+    # of sims: {n_sims}
+    m [1e-3]: {m:f} +/- {msd:f}
+    c [1e-4]: {c:f} +/- {csd:f}""".format(
+        n_sims=len(pres),
+        m=m/1e-3,
+        msd=msd/1e-3,
+        c=c/1e-4,
+        csd=csd/1e-4), flush=True)
+else:
+    print("""\
+    # of sims: {n_sims}
+    m       : {m:f} +/- {msd:f}
+    c       : {c:f} +/- {csd:f}""".format(
+        n_sims=len(pres),
+        m=m,
+        msd=msd,
+        c=c,
+        csd=csd), flush=True)
