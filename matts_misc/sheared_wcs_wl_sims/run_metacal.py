@@ -83,7 +83,7 @@ def run_metacal(*, n_sims, wcs_g1, wcs_g2):
     wcs_g2 : float
         The shear on the 2-axis of the WCS Jacobian.
     """
-    jc = galsim.ShearWCS(0.263, galsim.Shear(g1=wcs_g1, g2=wcs_g1)).jacobian()
+    jc = galsim.ShearWCS(0.263, galsim.Shear(g1=wcs_g1, g2=wcs_g2)).jacobian()
 
     jacobian_dict = {
         'dudx': jc.dudx,
