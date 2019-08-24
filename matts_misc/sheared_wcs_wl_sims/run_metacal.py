@@ -4,9 +4,9 @@ import tqdm
 import esutil as eu
 import ngmix
 import galsim
+import numba
 
-from .des_piff import DES_Piff
-from ..metacal.metacal_fitter import MetacalFitter, METACAL_TYPES
+from ..metacal.metacal_fitter import MetacalFitter
 
 
 CONFIG = {
@@ -69,24 +69,99 @@ CONFIG = {
 }
 
 
-def run_metacal(n_sims, stamp_size, psf_stamp_size, rng,
-                jacobian_dict, gauss_psf):
+def run_metacal(*, n_sims, wcs_g1, wcs_g2):
+    """Run metacal and measure m and c.
+
+    The resulting m and c are printed to STDOUT.
+
+    Parameters
+    ----------
+    n_sims : int
+        The number of objects to simulated.
+    wcs_g1 : float
+        The shear on the 1-axis of the WCS Jacobian.
+    wcs_g2 : float
+        The shear on the 2-axis of the WCS Jacobian.
+    """
+    jc = galsim.ShearWCS(0.263, galsim.Shear(g1=wcs_g1, g2=wcs_g1)).jacobian()
+
+    jacobian_dict = {
+        'dudx': jc.dudx,
+        'dudy': jc.dudy,
+        'dvdx': jc.dvdx,
+        'dvdy': jc.dvdy
+    }
+
+    swap_g1g2 = False
+
+    res = _run_metacal(
+        n_sims=n_sims,
+        rng=np.random.RandomState(seed=10),
+        swap_g1g2=swap_g1g2,
+        **jacobian_dict)
+
+    g1 = res['mcal_g_noshear'][:, 0]
+    g2 = res['mcal_g_noshear'][:, 1]
+    g1p = res['mcal_g_1p'][:, 0]
+    g1m = res['mcal_g_1m'][:, 0]
+    g2p = res['mcal_g_2p'][:, 1]
+    g2m = res['mcal_g_2m'][:, 1]
+
+    g_true = 0.02
+    step = 0.01
+
+    if swap_g1g2:
+        R11 = (g1p - g1m) / 2 / step
+        R22 = (g2p - g2m) / 2 / step * g_true
+
+        m, merr, c, cerr = _jack_est(g2, R22, g1, R11)
+    else:
+        R11 = (g1p - g1m) / 2 / step * g_true
+        R22 = (g2p - g2m) / 2 / step
+
+        m, merr, c, cerr = _jack_est(g1, R11, g2, R22)
+
+    print("""\
+# of sims: {n_sims}
+wcs_g1   : {wcs_g1:f}
+wcs_g2   : {wcs_g2:f}
+dudx     : {dudx:f}
+dudy     : {dudy:f}
+dvdx     : {dvdx:f}
+dvdy     : {dvdy:f}
+m [1e-3] : {m:f} +/- {msd:f}
+c [1e-4] : {c:f} +/- {csd:f}""".format(
+        n_sims=len(g1),
+        wcs_g1=wcs_g1,
+        wcs_g2=wcs_g2,
+        **jacobian_dict,
+        m=m/1e-3,
+        msd=merr/1e-3,
+        c=c/1e-4,
+        csd=cerr/1e-4), flush=True)
+
+
+def _run_metacal(*, n_sims, rng, swap_g1g2, dudx, dudy, dvdx, dvdy):
     """Run metacal on an image composed of stamps w/ constant noise.
 
     Parameters
     ----------
     n_sims : int
         The number of objects to run.
-    stamp_size : int
-        The size of each stamp.
-    psf_stamp_size : int
-        The size of each PSF stamp.
     rng : np.random.RandomState
         An RNG to use.
-    jacobian_dict : dict
-        A dictonary with the components of the image jacobian.
-    gauss_psf : bool
-        If True, test with a Gaussian PSF.
+    swap_g1g2 : bool
+        If True, set the true shear on the 2-axis to 0.02 and 1-axis to 0.0.
+        Otherwise, the true shear on the 1-axis is 0.02 and on the 2-axis is
+        0.0.
+    dudx : float
+        The du/dx Jacobian component.
+    dudy : float
+        The du/dy Jacobian component.
+    dydx : float
+        The dv/dx Jacobian component.
+    dvdy : float
+        The dv/dy Jacobian component.
 
     Returns
     -------
@@ -94,67 +169,60 @@ def run_metacal(n_sims, stamp_size, psf_stamp_size, rng,
         A dictionary with each of the metacal catalogs.
     """
 
-    method = 'auto'
+    stamp_size = 33
+    psf_stamp_size = 33
 
     cen = (stamp_size - 1) / 2
     psf_cen = (psf_stamp_size - 1)/2
+
     noise = 1
     flux = 64000
+
+    galsim_jac = galsim.JacobianWCS(
+        dudx=dudx,
+        dudy=dudy,
+        dvdx=dvdx,
+        dvdy=dvdy)
+
+    if swap_g1g2:
+        g1 = 0.0
+        g2 = 0.02
+    else:
+        g1 = 0.02
+        g2 = 0.0
+
     gal = galsim.Exponential(
         half_light_radius=0.5
     ).withFlux(
         flux
     ).shear(
-        g1=0.02, g2=0.0)
+        g1=g1, g2=g2)
 
-    if not gauss_psf:
-        piff_cats = np.loadtxt('piff_cat.txt', dtype=str)
-        piff_file = rng.choice(piff_cats)
-        psf_model = DES_Piff(piff_file)
-        print('piff file:', piff_file)
-
-    galsim_jac = galsim.JacobianWCS(
-        dudx=jacobian_dict['dudx'],
-        dudy=jacobian_dict['dudy'],
-        dvdx=jacobian_dict['dvdx'],
-        dvdy=jacobian_dict['dvdy'])
+    psf = galsim.Gaussian(fwhm=0.9).withFlux(1)
 
     data = []
     for ind in tqdm.trange(n_sims):
         ################################
         # make the obs
 
-        # first get PSF
-        x = rng.uniform(low=1, high=2048)
-        y = rng.uniform(low=1, high=2048)
-
-        if gauss_psf:
-            psf = galsim.Gaussian(fwhm=0.9).withFlux(1)
-        else:
-            psf = psf_model.getPSF(
-                galsim.PositionD(x=x, y=y),
-                galsim_jac)
-
+        # psf
         psf_im = psf.drawImage(
             nx=psf_stamp_size,
             ny=psf_stamp_size,
-            wcs=galsim_jac,
-            method=method).array
-
+            wcs=galsim_jac).array
         psf_noise = np.sqrt(np.sum(psf_im**2)) / 500
-        wgt = 0.0 * psf_im + 1.0 / psf_noise**2
+        wgt = np.ones_like(psf_im) / psf_noise**2
         psf_jac = ngmix.Jacobian(
             x=psf_cen,
             y=psf_cen,
-            dudx=jacobian_dict['dudx'],
-            dudy=jacobian_dict['dudy'],
-            dvdx=jacobian_dict['dvdx'],
-            dvdy=jacobian_dict['dvdy'])
+            dudx=dudx,
+            dudy=dudy,
+            dvdx=dvdx,
+            dvdy=dvdy)
         psf_obs = ngmix.Observation(
             image=psf_im,
             weight=wgt,
-            jacobian=psf_jac
-        )
+            jacobian=psf_jac)
 
         # now render object
         obj = galsim.Convolve(gal, psf)
@@ -163,15 +231,14 @@ def run_metacal(n_sims, stamp_size, psf_stamp_size, rng,
             nx=stamp_size,
             ny=stamp_size,
             wcs=galsim_jac,
-            offset=offset,
-            method=method).array
+            offset=offset).array
         jac = ngmix.Jacobian(
             x=cen+offset[0],
             y=cen+offset[1],
-            dudx=jacobian_dict['dudx'],
-            dudy=jacobian_dict['dudy'],
-            dvdx=jacobian_dict['dvdx'],
-            dvdy=jacobian_dict['dvdy'])
+            dudx=dudx,
+            dudy=dudy,
+            dvdx=dvdx,
+            dvdy=dvdy)
         wgt = np.ones_like(im) / noise**2
         nse = rng.normal(size=im.shape) * noise
         im += (rng.normal(size=im.shape) * noise)
@@ -209,44 +276,35 @@ def run_metacal(n_sims, stamp_size, psf_stamp_size, rng,
 
     if len(data) > 0:
         res = eu.numpy_util.combine_arrlist(data)
-        result = _result_to_dict(res)
     else:
-        result = None
+        res = None
 
-    return result
+    return res
 
 
-def _result_to_dict(data):
-    cols_to_always_keep = ['x', 'y']
+@numba.njit
+def _jack_est(g1, R11, g2, R22):
+    g1bar = np.mean(g1)
+    R11bar = np.mean(R11)
+    g2bar = np.mean(g2)
+    R22bar = np.mean(R22)
+    n = g1.shape[0]
+    fac = n / (n-1)
+    m_samps = np.zeros_like(g1)
+    c_samps = np.zeros_like(g1)
 
-    def _get_col_type(col):
-        for dtup in data.descr.descr:
-            if dtup[0] == col:
-                return list(dtup[1:])
-        return None
+    for i in range(n):
+        _g1 = fac * (g1bar - g1[i]/n)
+        _R11 = fac * (R11bar - R11[i]/n)
+        _g2 = fac * (g2bar - g2[i]/n)
+        _R22 = fac * (R22bar - R22[i]/n)
+        m_samps[i] = _g1 / _R11 - 1
+        c_samps[i] = _g2 / _R22
 
-    result = {}
+    m = np.mean(m_samps)
+    c = np.mean(c_samps)
 
-    # now build each of other catalogs
-    for sh in METACAL_TYPES:
-        dtype_descr = []
-        for dtup in data.dtype.descr:
-            if dtup[0] in cols_to_always_keep:
-                dtype_descr.append(dtup)
-            elif dtup[0].startswith('mcal_') and dtup[0].endswith(sh):
-                dlist = [dtup[0].replace('_%s' % sh, '')]
-                dlist = dlist + list(dtup[1:])
-                dtype_descr.append(tuple(dlist))
+    m_err = np.sqrt(np.sum((m - m_samps)**2) / fac)
+    c_err = np.sqrt(np.sum((c - c_samps)**2) / fac)
 
-        sh_cat = np.zeros(len(data), dtype=dtype_descr)
-        for col in sh_cat.dtype.names:
-            sh_col = col + '_%s' % sh
-            if col in data.dtype.names:
-                sh_cat[col] = data[col]
-            elif sh_col in data.dtype.names:
-                sh_cat[col] = data[sh_col]
-            else:
-                raise ValueError("column %s not found!" % col)
-        result[sh] = sh_cat
-
-    return result
+    return m, m_err, c, c_err
