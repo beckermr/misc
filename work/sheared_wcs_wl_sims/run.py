@@ -151,7 +151,7 @@ def _run_metacal(*, n_sims, rng, swap_g1g2, dudx, dudy, dvdx, dvdy):
             nx=psf_stamp_size,
             ny=psf_stamp_size,
             wcs=galsim_jac).array
-        psf_noise = np.sqrt(np.sum(psf_im**2)) / 1000
+        psf_noise = np.sqrt(np.sum(psf_im**2)) / 10000
         wgt = np.ones_like(psf_im) / psf_noise**2
         psf_im += (rng.normal(size=psf_im.shape) * psf_noise)
         psf_jac = ngmix.Jacobian(
