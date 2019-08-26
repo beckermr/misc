@@ -6,14 +6,13 @@ import ngmix
 import galsim
 import numba
 
-from ngmix import metacal
-from metadetect.fitting import Moments
+from ngmix.fitting import LMSimple
 
 
-def run_metacal(*, n_sims, wcs_g1, wcs_g2):
-    """Run metacal and measure m and c.
+def run_ml(*, n_sims, wcs_g1, wcs_g2):
+    """Run the moments fitter and check g1, g2.
 
-    The resulting m and c are printed to STDOUT.
+    The resulting values are printed to STDOUT.
 
     Parameters
     ----------
@@ -33,34 +32,14 @@ def run_metacal(*, n_sims, wcs_g1, wcs_g2):
         'dvdy': jc.dvdy
     }
 
-    swap_g1g2 = False
-
-    res = _run_metacal(
+    res = _run_ml(
         n_sims=n_sims,
         rng=np.random.RandomState(seed=10),
-        swap_g1g2=swap_g1g2,
         **jacobian_dict)
 
-    g1 = np.array([r['noshear']['g'][0] for r in res])
-    g2 = np.array([r['noshear']['g'][1] for r in res])
-    g1p = np.array([r['1p']['g'][0] for r in res])
-    g1m = np.array([r['1m']['g'][0] for r in res])
-    g2p = np.array([r['2p']['g'][1] for r in res])
-    g2m = np.array([r['2m']['g'][1] for r in res])
-
-    g_true = 0.02
-    step = 0.01
-
-    if swap_g1g2:
-        R11 = (g1p - g1m) / 2 / step
-        R22 = (g2p - g2m) / 2 / step * g_true
-
-        m, merr, c, cerr = _jack_est(g2, R22, g1, R11)
-    else:
-        R11 = (g1p - g1m) / 2 / step * g_true
-        R22 = (g2p - g2m) / 2 / step
-
-        m, merr, c, cerr = _jack_est(g1, R11, g2, R22)
+    g1 = np.array([r['g'][0] for r in res])
+    g2 = np.array([r['g'][1] for r in res])
+    g1m, g1_err, g2m, g2_err = _jack_est(g1, g2)
 
     print("""\
 # of sims: {n_sims}
@@ -70,19 +49,43 @@ dudx     : {dudx:f}
 dudy     : {dudy:f}
 dvdx     : {dvdx:f}
 dvdy     : {dvdy:f}
-m [1e-3] : {m:f} +/- {msd:f}
-c [1e-4] : {c:f} +/- {csd:f}""".format(
+g1 [1e-3] : {g1m:f} +/- {g1_err:f}
+g2 [1e-3] : {g2m:f} +/- {g2_err:f}""".format(
         n_sims=len(g1),
         wcs_g1=wcs_g1,
         wcs_g2=wcs_g2,
         **jacobian_dict,
-        m=m/1e-3,
-        msd=merr/1e-3,
-        c=c/1e-4,
-        csd=cerr/1e-4), flush=True)
+        g1m=g1m/1e-3,
+        g1_err=g1_err/1e-3,
+        g2m=g2m/1e-3,
+        g2_err=g2_err/1e-3), flush=True)
 
 
-def _run_metacal(*, n_sims, rng, swap_g1g2, dudx, dudy, dvdx, dvdy):
+@numba.njit
+def _jack_est(g1, g2):
+    g1bar = np.mean(g1)
+    g2bar = np.mean(g2)
+    n = g1.shape[0]
+    fac = n / (n-1)
+    g1_samps = np.zeros_like(g1)
+    g2_samps = np.zeros_like(g2)
+
+    for i in range(n):
+        _g1 = fac * (g1bar - g1[i]/n)
+        _g2 = fac * (g2bar - g2[i]/n)
+        g1_samps[i] = _g1
+        g2_samps[i] = _g2
+
+    g1m = np.mean(g1_samps)
+    g2m = np.mean(g2_samps)
+
+    g1_err = np.sqrt(np.sum((g1m - g1_samps)**2) / fac)
+    g2_err = np.sqrt(np.sum((g2m - g2_samps)**2) / fac)
+
+    return g1m, g1_err, g2m, g2_err
+
+
+def _run_ml(*, n_sims, rng, dudx, dudy, dvdx, dvdy):
     """Run metacal on an image composed of stamps w/ constant noise.
 
     Parameters
@@ -91,10 +94,6 @@ def _run_metacal(*, n_sims, rng, swap_g1g2, dudx, dudy, dvdx, dvdy):
         The number of objects to run.
     rng : np.random.RandomState
         An RNG to use.
-    swap_g1g2 : bool
-        If True, set the true shear on the 2-axis to 0.02 and 1-axis to 0.0.
-        Otherwise, the true shear on the 1-axis is 0.02 and on the 2-axis is
-        0.0.
     dudx : float
         The du/dx Jacobian component.
     dudy : float
@@ -125,20 +124,10 @@ def _run_metacal(*, n_sims, rng, swap_g1g2, dudx, dudy, dvdx, dvdy):
         dvdx=dvdx,
         dvdy=dvdy)
 
-    if swap_g1g2:
-        g1 = 0.0
-        g2 = 0.02
-    else:
-        g1 = 0.02
-        g2 = 0.0
-
     gal = galsim.Exponential(
         half_light_radius=0.5
     ).withFlux(
-        flux
-    ).shear(
-        g1=g1, g2=g2)
-
+        flux)
     psf = galsim.Gaussian(fwhm=0.9).withFlux(1)
     obj = galsim.Convolve(gal, psf)
     obj_im = obj.drawImage(nx=111, ny=111).array
@@ -212,9 +201,9 @@ def _run_metacal(*, n_sims, rng, swap_g1g2, dudx, dudy, dvdx, dvdy):
         ################################
         # run the fitters
         try:
-            res = _run_metacal_fitter(mbobs, rng)
+            res = _run_ml_fitter(mbobs, rng)
         except Exception as e:
-            print(e)
+            print('err:', e, type(e))
             res = None
 
         if res is not None:
@@ -226,34 +215,6 @@ def _run_metacal(*, n_sims, rng, swap_g1g2, dudx, dudy, dvdx, dvdy):
         res = None
 
     return res
-
-
-@numba.njit
-def _jack_est(g1, R11, g2, R22):
-    g1bar = np.mean(g1)
-    R11bar = np.mean(R11)
-    g2bar = np.mean(g2)
-    R22bar = np.mean(R22)
-    n = g1.shape[0]
-    fac = n / (n-1)
-    m_samps = np.zeros_like(g1)
-    c_samps = np.zeros_like(g1)
-
-    for i in range(n):
-        _g1 = fac * (g1bar - g1[i]/n)
-        _R11 = fac * (R11bar - R11[i]/n)
-        _g2 = fac * (g2bar - g2[i]/n)
-        _R22 = fac * (R22bar - R22[i]/n)
-        m_samps[i] = _g1 / _R11 - 1
-        c_samps[i] = _g2 / _R22
-
-    m = np.mean(m_samps)
-    c = np.mean(c_samps)
-
-    m_err = np.sqrt(np.sum((m - m_samps)**2) / fac)
-    c_err = np.sqrt(np.sum((c - c_samps)**2) / fac)
-
-    return m, m_err, c, c_err
 
 
 def _fit_psf(psf):
@@ -277,38 +238,23 @@ def _fit_psf(psf):
         raise BootPSFFailure("failed to fit psfs: %s" % str(res))
 
 
-def _run_metacal_fitter(mbobs, rng):
+def _run_ml_fitter(mbobs, rng):
     # fit the PSF
     _fit_psf(mbobs[0][0].psf)
 
-    metacal_pars = {
-        'psf': 'fitgauss',
-        'types': ['noshear', '1p', '1m', '2p', '2m'],
-        'use_noise_image': True,
-        'step': 0.01
-    }
-    moments_pars = {'bmask_flags': 2**30, 'weight': {'fwhm': 1.2}}
-
-    obs_dict = metacal.get_all_metacal(mbobs, **metacal_pars)
-
     # overall flags, or'ed from each moments fit
     res = {'mcal_flags': 0}
-    for key in sorted(obs_dict):
-        try:
-            fitter = Moments(moments_pars, rng)
-            fres = fitter.go([obs_dict[key]])
-        except Exception as err:
-            print(err)
-            fres = {'flags': np.ones(1, dtype=[('flags', 'i4')])}
+    try:
+        fitter = LMSimple(mbobs[0][0], 'gauss')
+        fitter.go(np.ones(6) * 0.1)
+        fres = fitter.get_result()
+    except Exception as err:
+        print('err:', err)
+        fres = {'flags': np.ones(1, dtype=[('flags', 'i4')])}
 
-        res['mcal_flags'] |= fres['flags'][0]
-        tres = {}
-        for name in fres.dtype.names:
-            no_wmom = name.replace('wmom_', '')
-            tres[no_wmom] = fres[name][0]
-        tres['flags'] = fres['flags'][0]  # make sure this is moved over
-        res[key] = tres
-
+    res['mcal_flags'] |= fres['flags']
+    if not res['mcal_flags']:
+        res['g'] = fres['g']
     return res
 
 
@@ -323,4 +269,4 @@ if __name__ == '__main__':
     else:
         wcs_g2 = wcs_g1
 
-    run_metacal(n_sims=int(sys.argv[1]), wcs_g1=wcs_g1, wcs_g2=wcs_g2)
+    run_ml(n_sims=int(sys.argv[1]), wcs_g1=wcs_g1, wcs_g2=wcs_g2)
