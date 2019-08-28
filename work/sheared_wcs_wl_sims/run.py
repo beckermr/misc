@@ -170,15 +170,17 @@ def _run_metacal(*, n_sims, rng, swap_g1g2, dudx, dudy, dvdx, dvdy):
             jacobian=psf_jac)
 
         # now render object
-        offset = rng.uniform(low=-0.5, high=0.5, size=2)
-        im = obj.drawImage(
+        scale = psf_jac.scale
+        shift = rng.uniform(low=-scale/2, high=scale/2, size=2)
+        _obj = obj.shift(dx=shift[0], dy=shift[1])
+        xy = galsim_jac.toImage(galsim.PositionD(shift))
+        im = _obj.drawImage(
             nx=stamp_size,
             ny=stamp_size,
-            wcs=galsim_jac,
-            offset=offset).array
+            wcs=galsim_jac).array
         jac = ngmix.Jacobian(
-            x=cen+offset[0],
-            y=cen+offset[1],
+            x=cen+xy.x,
+            y=cen+xy.y,
             dudx=dudx,
             dudy=dudy,
             dvdx=dvdx,
