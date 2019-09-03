@@ -86,31 +86,33 @@ class DES_Piff(object):
 
         xloc = xloc.ravel()
         yloc = yloc.ravel()
+        pos = np.stack([xloc, yloc], axis=1)
+        assert pos.shape == (xloc.shape[0], 2)
 
         # make interps
         g1 = pars[:, :, 0].ravel()
         msk = np.isfinite(g1)
         if len(msk) < 10:
             raise ValueError('DES Piff fitting failed too much!')
-        pos = np.stack([xloc[msk], yloc[msk]], axis=1)
-        assert pos.shape == (np.sum(msk), 2)
-        self._g1int = CloughTocher2DInterpolator(pos, g1[msk])
+        if np.any(~msk):
+            g1[~msk] = np.mean(g1[msk])
+        self._g1int = CloughTocher2DInterpolator(pos, g1)
 
         g2 = pars[:, :, 1].ravel()
         msk = np.isfinite(g2)
         if len(msk) < 10:
             raise ValueError('DES Piff fitting failed too much!')
-        pos = np.stack([xloc[msk], yloc[msk]], axis=1)
-        assert pos.shape == (np.sum(msk), 2)
-        self._g2int = CloughTocher2DInterpolator(pos, g2[msk])
+        if np.any(~msk):
+            g2[~msk] = np.mean(g2[msk])
+        self._g2int = CloughTocher2DInterpolator(pos, g2)
 
         T = pars[:, :, 2].ravel()
         msk = np.isfinite(T)
         if len(msk) < 10:
             raise ValueError('DES Piff fitting failed too much!')
-        pos = np.stack([xloc[msk], yloc[msk]], axis=1)
-        assert pos.shape == (np.sum(msk), 2)
-        self._Tint = CloughTocher2DInterpolator(pos, T[msk])
+        if np.any(~msk):
+            T[~msk] = np.mean(T[msk])
+        self._Tint = CloughTocher2DInterpolator(pos, T)
 
         self._did_fit = True
 
@@ -187,9 +189,15 @@ class DES_Piff(object):
         if not self._did_fit:
             self._fit_smooth_model()
 
-        _g1 = self._g1int(np.array([image_pos.x, image_pos.y]))[0]
-        _g2 = self._g2int(np.array([image_pos.x, image_pos.y]))[0]
-        _T = self._Tint(np.array([image_pos.x, image_pos.y]))[0]
+        arr = np.array([
+            np.clip(image_pos.x, 1, 2048),
+            np.clip(image_pos.y, 1, 4096)])
+
+        _g1 = self._g1int(arr)[0]
+        _g2 = self._g2int(arr)[0]
+        _T = self._Tint(arr)[0]
+        if np.any(np.isnan(np.array([_g1, _g2, _T]))):
+            print("\n\n\n", image_pos, _g1, _g2, _T, "\n\n\n", flush=True)
         pars = np.array([0, 0, _g1, _g2, _T, 1])
         obj = ngmix.gmix.make_gmix_model(pars, 'turb').make_galsim_object()
         return obj.withFlux(1)
