@@ -44,7 +44,7 @@ Queue
 """.format(num=num, end=end, output_dir=output_dir))
 
 
-n_patches = 100_0000
+n_patches = 25_0000
 n_patches_per_job = 100
 n_jobs = n_patches // n_patches_per_job
 n_jobs_per_script = 500
