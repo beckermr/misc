@@ -110,13 +110,15 @@ def _run_metacal(*, n_sims, rng, swap_g1g2, dudx, dudy, dvdx, dvdy):
         A dictionary with each of the metacal catalogs.
     """
 
+    method = 'auto'
+
     stamp_size = 33
     psf_stamp_size = 33
 
     cen = (stamp_size - 1) / 2
     psf_cen = (psf_stamp_size - 1)/2
 
-    s2n = 1e6
+    s2n = 1e16
     flux = 1e6
 
     galsim_jac = galsim.JacobianWCS(
@@ -153,7 +155,8 @@ def _run_metacal(*, n_sims, rng, swap_g1g2, dudx, dudy, dvdx, dvdy):
         psf_im = psf.drawImage(
             nx=psf_stamp_size,
             ny=psf_stamp_size,
-            wcs=galsim_jac).array
+            wcs=galsim_jac,
+            method=method).array
         psf_noise = np.sqrt(np.sum(psf_im**2)) / 10000
         wgt = np.ones_like(psf_im) / psf_noise**2
         psf_im += (rng.normal(size=psf_im.shape) * psf_noise)
@@ -177,7 +180,8 @@ def _run_metacal(*, n_sims, rng, swap_g1g2, dudx, dudy, dvdx, dvdy):
         im = _obj.drawImage(
             nx=stamp_size,
             ny=stamp_size,
-            wcs=galsim_jac).array
+            wcs=galsim_jac,
+            method=method).array
         jac = ngmix.Jacobian(
             x=cen+xy.x,
             y=cen+xy.y,

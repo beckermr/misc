@@ -108,6 +108,7 @@ def _run_ml(*, n_sims, rng, dudx, dudy, dvdx, dvdy):
     result : dict
         A dictionary with each of the metacal catalogs.
     """
+    method = 'no_pixel'
 
     stamp_size = 33
     psf_stamp_size = 33
@@ -115,7 +116,7 @@ def _run_ml(*, n_sims, rng, dudx, dudy, dvdx, dvdy):
     cen = (stamp_size - 1) / 2
     psf_cen = (psf_stamp_size - 1)/2
 
-    s2n = 1e6
+    s2n = 1e16
     flux = 1e6
 
     galsim_jac = galsim.JacobianWCS(
@@ -142,7 +143,8 @@ def _run_ml(*, n_sims, rng, dudx, dudy, dvdx, dvdy):
         psf_im = psf.drawImage(
             nx=psf_stamp_size,
             ny=psf_stamp_size,
-            wcs=galsim_jac).array
+            wcs=galsim_jac,
+            method=method).array
         psf_noise = np.sqrt(np.sum(psf_im**2)) / 10000
         wgt = np.ones_like(psf_im) / psf_noise**2
         psf_im += (rng.normal(size=psf_im.shape) * psf_noise)
@@ -159,15 +161,18 @@ def _run_ml(*, n_sims, rng, dudx, dudy, dvdx, dvdy):
             jacobian=psf_jac)
 
         # now render object
-        offset = rng.uniform(low=-0.5, high=0.5, size=2)
-        im = obj.drawImage(
+        scale = psf_jac.scale
+        shift = rng.uniform(low=-scale/2, high=scale/2, size=2)
+        _obj = obj.shift(dx=shift[0], dy=shift[1])
+        xy = galsim_jac.toImage(galsim.PositionD(shift))
+        im = _obj.drawImage(
             nx=stamp_size,
             ny=stamp_size,
             wcs=galsim_jac,
-            offset=offset).array
+            method=method).array
         jac = ngmix.Jacobian(
-            x=cen+offset[0],
-            y=cen+offset[1],
+            x=cen+xy.x,
+            y=cen+xy.y,
             dudx=dudx,
             dudy=dudy,
             dvdx=dvdx,
@@ -245,8 +250,8 @@ def _run_ml_fitter(mbobs, rng):
     # overall flags, or'ed from each moments fit
     res = {'mcal_flags': 0}
     try:
-        fitter = LMSimple(mbobs[0][0], 'gauss')
-        fitter.go(np.ones(6) * 0.1)
+        fitter = LMSimple(mbobs[0][0], 'exp')
+        fitter.go(np.array([0, 0, 0, 0, 1, 10]))
         fres = fitter.get_result()
     except Exception as err:
         print('err:', err)
