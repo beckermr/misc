@@ -1,7 +1,7 @@
 import galsim
 import galsim.des
 
-from .des_piff import DES_Piff
+from ..des_piff import DES_Piff
 from .gauss_pix_psf import GaussPixPSF
 
 

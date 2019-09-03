@@ -143,7 +143,7 @@ class End2EndSimulation(object):
         if self.psf_kws['type'] == 'gauss':
             psf_model = galsim.Gaussian(fwhm=0.9)
         elif self.psf_kws['type'] == 'piff':
-            from .des_piff import DES_Piff
+            from ..des_piff import DES_Piff
             psf_model = DES_Piff(expand_path(se_info['piff_path']))
             assert self.draw_method == 'auto'
         elif self.psf_kws['type'] == 'gauss-pix':

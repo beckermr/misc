@@ -121,7 +121,7 @@ def _build_psf_data(*, info, psf_kws, output_meds_dir):
         if psf_kws['type'] == 'gauss' or force_gauss:
             return PSFWrapper(galsim.Gaussian(fwhm=0.9), wcs)
         elif psf_kws['type'] == 'piff':
-            from .des_piff import DES_Piff
+            from ..des_piff import DES_Piff
             piff_model = DES_Piff(expand_path(_info['piff_path']))
             return PSFWrapper(piff_model, wcs)
         elif psf_kws['type'] == 'gauss-pix':

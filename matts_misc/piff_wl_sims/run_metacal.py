@@ -5,7 +5,7 @@ import esutil as eu
 import ngmix
 import galsim
 
-from .des_piff import DES_Piff
+from ..des_piff import DES_Piff
 from ..metacal.metacal_fitter import MetacalFitter, METACAL_TYPES
 
 

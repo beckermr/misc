@@ -77,7 +77,7 @@ class DES_Piff(object):
                             _g2 = lm_res['pars'][3]
                             _T = lm_res['pars'][4]
                             break
-                    except ngmix.gexception.GMixRangeError:
+                    except ngmix.gexceptions.GMixRangeError:
                         pass
 
                 pars[yi, xi, 0] = _g1
