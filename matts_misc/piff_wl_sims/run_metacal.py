@@ -113,6 +113,9 @@ def run_metacal(n_sims, stamp_size, psf_stamp_size, rng,
         psf_model = DES_Piff(piff_file)
         print('piff file:', piff_file)
 
+    if jacobian_dict['dudy'] != 0 or jacobian_dict['dvdx'] != 0:
+        print('jacobian:', jacobian_dict)
+
     galsim_jac = galsim.JacobianWCS(
         dudx=jacobian_dict['dudx'],
         dudy=jacobian_dict['dudy'],

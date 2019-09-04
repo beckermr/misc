@@ -52,7 +52,7 @@ n_scripts = n_jobs // n_jobs_per_script
 
 cwd = os.path.abspath(os.getcwd())
 try:
-    os.makedirs(os.path.join(cwd, 'outputs'))
+    os.makedirs(os.path.join(cwd, 'outputs', 'logs'))
 except Exception:
     pass
 
