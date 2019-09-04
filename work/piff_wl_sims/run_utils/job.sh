@@ -7,7 +7,7 @@ if [[ -n $_CONDOR_SCRATCH_DIR ]]; then
     # and cleans up afterward
     tmpdir=$_CONDOR_SCRATCH_DIR
     export TMPDIR=$tmpdir
-    source activate bnl
+    conda activate bnl
 else
     # otherwise use the TMPDIR
     tmpdir='.'
