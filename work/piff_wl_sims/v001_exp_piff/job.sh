@@ -17,7 +17,7 @@ fi
 for seed in `seq $1 $2`
 do
     python run.py ${seed} $tmpdir/out_${1}_${2}_${seed}.pkl &> $tmpdir/log_${1}_${2}_${seed}.oe
-    mv $tmpdir/log_${1}_${2}_${seed}.oe mv ${3}/log_${1}_${2}_${seed}.oe
+    mv $tmpdir/log_${1}_${2}_${seed}.oe ${3}/log_${1}_${2}_${seed}.oe
 done
 
 python collate.py ${3}/out_${1}_${2}.pkl $tmpdir/out_${1}_${2}_*
