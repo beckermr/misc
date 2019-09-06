@@ -11,6 +11,8 @@ output="outputs-{{ tilename }}"
 bands="riz"
 tilename="{{ tilename }}"
 
+rm -rf /tmp/*
+
 source activate anl
 
 run-simple-des-y3-sim \
