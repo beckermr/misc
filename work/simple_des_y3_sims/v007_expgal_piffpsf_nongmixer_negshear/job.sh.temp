@@ -11,7 +11,7 @@ output="outputs-{{ tilename }}"
 bands="riz"
 tilename="{{ tilename }}"
 
-conda activate anl
+source activate anl
 
 run-simple-des-y3-sim \
   prep \
