@@ -1,6 +1,7 @@
 import json
 import os
 import logging
+import tempfile
 
 import numpy as np
 import meds.util
@@ -94,22 +95,22 @@ def make_meds_files(*, tilename, bands, output_meds_dir, psf_kws, meds_config):
             band=band)
         make_dirs_for_file(final_meds_file)
 
-        with StagedOutFile(
-                final_meds_file, tmpdir=os.environ.get('TMPDIR', None)) as sf:
-            uncompressed_file = sf.path.replace('.fits.fz', '.fits')
-            make_dirs_for_file(uncompressed_file)
-            maker.write(uncompressed_file)
+        with tempfile.TemporayDirectory() as tmpdir:
+            with StagedOutFile(final_meds_file, tmpdir=tmpdir) as sf:
+                uncompressed_file = sf.path.replace('.fits.fz', '.fits')
+                make_dirs_for_file(uncompressed_file)
+                maker.write(uncompressed_file)
 
-            # make sure to remove the destination file when fpacking
-            try:
-                os.remove(sf.path)
-            except Exception:
-                pass
-            desmeds.util.fpack_file(uncompressed_file)
-            try:
-                os.remove(uncompressed_file)
-            except Exception:
-                pass
+                # make sure to remove the destination file when fpacking
+                try:
+                    os.remove(sf.path)
+                except Exception:
+                    pass
+                desmeds.util.fpack_file(uncompressed_file)
+                try:
+                    os.remove(uncompressed_file)
+                except Exception:
+                    pass
 
 
 def _build_psf_data(*, info, psf_kws, output_meds_dir):

@@ -1,20 +1,17 @@
 #!/bin/bash
-#!/bin/bash
 #SBATCH -J v007-{{ tilename }}
-#SBATCH -p bdw
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
 #SBATCH -o results-{{ tilename }}.oe
 #SBATCH -t 6:00:00
 
 export MEDS_DIR=$DESDATA
-export TMPDIR=/scratch
 
 output="outputs-{{ tilename }}"
 bands="riz"
 tilename="{{ tilename }}"
 
-source activate lcrc
+conda activate anl
 
 run-simple-des-y3-sim \
   prep \

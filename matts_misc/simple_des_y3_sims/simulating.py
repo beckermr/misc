@@ -1,6 +1,6 @@
 import logging
 import shutil
-import os
+import tempfile
 
 import numpy as np
 import yaml
@@ -332,29 +332,30 @@ def _write_se_img_wgt_bkg(
     image_file = se_info['image_path'].replace(
         '$MEDS_DIR', output_meds_dir)
     make_dirs_for_file(image_file)
-    with StagedOutFile(
-            image_file, tmpdir=os.environ.get('TMPDIR', None)) as sf:
-        # copy to the place we stage from
-        shutil.copy(expand_path(se_info['image_path']), sf.path)
+    with tempfile.TemporayDirectory() as tmpdir:
+        with StagedOutFile(image_file, tmpdir=tmpdir) as sf:
+            # copy to the place we stage from
+            shutil.copy(expand_path(se_info['image_path']), sf.path)
 
-        # open in read-write mode and replace the data
-        with fitsio.FITS(sf.path, mode='rw') as fits:
-            fits[se_info['image_ext']].write(image)
-            fits[se_info['weight_ext']].write(weight)
-            fits[se_info['bmask_ext']].write(
-                np.zeros_like(image, dtype=np.int16))
+            # open in read-write mode and replace the data
+            with fitsio.FITS(sf.path, mode='rw') as fits:
+                fits[se_info['image_ext']].write(image)
+                fits[se_info['weight_ext']].write(weight)
+                fits[se_info['bmask_ext']].write(
+                    np.zeros_like(image, dtype=np.int16))
 
     # get the background file path and write
     bkg_file = se_info['bkg_path'].replace(
         '$MEDS_DIR', output_meds_dir)
     make_dirs_for_file(bkg_file)
-    with StagedOutFile(bkg_file, tmpdir=os.environ.get('TMPDIR', None)) as sf:
-        # copy to the place we stage from
-        shutil.copy(expand_path(se_info['bkg_path']), sf.path)
+    with tempfile.TemporayDirectory() as tmpdir:
+        with StagedOutFile(bkg_file, tmpdir=tmpdir) as sf:
+            # copy to the place we stage from
+            shutil.copy(expand_path(se_info['bkg_path']), sf.path)
 
-        # open in read-write mode and replace the data
-        with fitsio.FITS(sf.path, mode='rw') as fits:
-            fits[se_info['bkg_ext']].write(background)
+            # open in read-write mode and replace the data
+            with fitsio.FITS(sf.path, mode='rw') as fits:
+                fits[se_info['bkg_ext']].write(background)
 
 
 class LazySourceCat(object):
