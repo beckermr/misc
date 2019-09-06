@@ -95,7 +95,7 @@ def make_meds_files(*, tilename, bands, output_meds_dir, psf_kws, meds_config):
             band=band)
         make_dirs_for_file(final_meds_file)
 
-        with tempfile.TemporayDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             with StagedOutFile(final_meds_file, tmpdir=tmpdir) as sf:
                 uncompressed_file = sf.path.replace('.fits.fz', '.fits')
                 make_dirs_for_file(uncompressed_file)

@@ -332,7 +332,7 @@ def _write_se_img_wgt_bkg(
     image_file = se_info['image_path'].replace(
         '$MEDS_DIR', output_meds_dir)
     make_dirs_for_file(image_file)
-    with tempfile.TemporayDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory() as tmpdir:
         with StagedOutFile(image_file, tmpdir=tmpdir) as sf:
             # copy to the place we stage from
             shutil.copy(expand_path(se_info['image_path']), sf.path)
@@ -348,7 +348,7 @@ def _write_se_img_wgt_bkg(
     bkg_file = se_info['bkg_path'].replace(
         '$MEDS_DIR', output_meds_dir)
     make_dirs_for_file(bkg_file)
-    with tempfile.TemporayDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory() as tmpdir:
         with StagedOutFile(bkg_file, tmpdir=tmpdir) as sf:
             # copy to the place we stage from
             shutil.copy(expand_path(se_info['bkg_path']), sf.path)
