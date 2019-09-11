@@ -6,7 +6,7 @@
 #SBATCH -t 6:00:00
 
 export MEDS_DIR=$DESDATA
-export TMPDIR=/homes/mrbecker/scratch/TMPDIR
+# export TMPDIR=/homes/mrbecker/scratch/TMPDIR
 
 output="outputs-{{ tilename }}"
 bands="riz"
