@@ -1,20 +1,18 @@
 import sys
 import pickle
 import numpy as np
-import fitsio
 
 from matts_misc.piff_wl_sims.run_metacal import run_metacal
+from config import jacobian_dict, gauss_psf, n_sims
 
 
-image = fitsio.read(sys.argv[1])
-psf_image = fitsio.read(sys.argv[2])
 stamp_size = 33
-# compute the PSF stamp size assuming the same number of stamps
-psf_stamp_size = psf_image.shape[0] // (image.shape[0] // stamp_size)
-noise = 1
-rng = np.random.RandomState(seed=int(sys.argv[3]))
+psf_stamp_size = 53
+rng = np.random.RandomState(seed=int(sys.argv[1]))
 
-res = run_metacal(image, psf_image, stamp_size, psf_stamp_size, noise, rng)
+res = run_metacal(
+    n_sims, stamp_size, psf_stamp_size, rng,
+    jacobian_dict, gauss_psf)
 
 
 def _mask(cat):
@@ -40,5 +38,5 @@ e2p = np.mean(res['2p']['mcal_g'][msk, 1])
 msk = _mask(res['2m'])
 e2m = np.mean(res['2m']['mcal_g'][msk, 1])
 
-with open(sys.argv[4], 'wb') as fp:
+with open(sys.argv[2], 'wb') as fp:
     pickle.dump((e1p, e1m, e1, e2p, e2m, e2), fp)

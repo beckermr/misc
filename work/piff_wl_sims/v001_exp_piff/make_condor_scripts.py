@@ -44,7 +44,7 @@ Queue
 """.format(num=num, end=end, output_dir=output_dir))
 
 
-n_patches = 100_0000
+n_patches = 25_0000
 n_patches_per_job = 100
 n_jobs = n_patches // n_patches_per_job
 n_jobs_per_script = 500
@@ -52,7 +52,7 @@ n_scripts = n_jobs // n_jobs_per_script
 
 cwd = os.path.abspath(os.getcwd())
 try:
-    os.makedirs(os.path.join(cwd, 'outputs'))
+    os.makedirs(os.path.join(cwd, 'outputs', 'logs'))
 except Exception:
     pass
 

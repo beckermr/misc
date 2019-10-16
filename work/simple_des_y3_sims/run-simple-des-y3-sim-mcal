@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+import logging
+import sys
+import os
+
+import click
+import yaml
+
+from simple_des_y3_sims_mcal import run_mcal
+
+for lib in ['simple_des_y3_sims_mcal']:
+    lgr = logging.getLogger(lib)
+    hdr = logging.StreamHandler(sys.stdout)
+    hdr.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+    lgr.setLevel(logging.DEBUG)
+    lgr.addHandler(hdr)
+
+
+@click.command()
+@click.option('--tilename', type=str, default=None,
+              help='the coadd tile to simulate')
+@click.option('--bands', type=str, required=True,
+              help=('a list of bands to run as '
+                    'a concatnated string (e.g., "riz")'))
+@click.option('--meds-files', type=str, default=None,
+              help='comma separated list of MEDS files')
+@click.option('--output-desdata', type=str, required=True,
+              help='the output DESDATA directory')
+@click.option('--mcal-config-file', type=str, required=True,
+              help='the YAML config file for metacal')
+@click.option('--seed', type=int, required=True,
+              help='the base RNG seed')
+def main(tilename, bands, meds_files, output_desdata, mcal_config_file, seed):
+    """Run metacal on a tile with ngmixer and ngmix."""
+    with open(mcal_config_file, 'r') as fp:
+        mcal_config = yaml.load(fp, Loader=yaml.Loader)
+    mcal_config['jobs']['bands'] = [b for b in bands]
+
+    if meds_files is not None:
+        meds_files = [m.strip() for m in meds_files.split(',')]
+        assert all([os.path.exists(m) for m in meds_files])
+
+    run_mcal(
+        tilename, output_desdata, mcal_config, seed, meds_files=meds_files)
+
+
+if __name__ == '__main__':
+    main()

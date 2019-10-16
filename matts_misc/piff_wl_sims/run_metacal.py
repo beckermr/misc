@@ -3,8 +3,10 @@ import tqdm
 
 import esutil as eu
 import ngmix
+import galsim
 
-from .metacal.metacal_fitter import MetacalFitter, METACAL_TYPES
+from ..des_piff import DES_Piff
+from ..metacal.metacal_fitter import MetacalFitter, METACAL_TYPES
 
 
 CONFIG = {
@@ -67,86 +69,140 @@ CONFIG = {
 }
 
 
-def run_metacal(image, psf_image, stamp_size, psf_stamp_size, noise, rng):
+def run_metacal(n_sims, stamp_size, psf_stamp_size, rng,
+                jacobian_dict, gauss_psf):
     """Run metacal on an image composed of stamps w/ constant noise.
 
     Parameters
     ----------
-    image : np.ndarray
-        The image of stamos.
-    psf_image : np.ndarray
-        The image of PSF images.
+    n_sims : int
+        The number of objects to run.
     stamp_size : int
         The size of each stamp.
     psf_stamp_size : int
         The size of each PSF stamp.
-    noise : float
-        The noise level in the image.
     rng : np.random.RandomState
         An RNG to use.
+    jacobian_dict : dict
+        A dictonary with the components of the image jacobian.
+    gauss_psf : bool
+        If True, test with a Gaussian PSF.
 
     Returns
     -------
     result : dict
         A dictionary with each of the metacal catalogs.
     """
-    nx = image.shape[1] // stamp_size
-    ny = image.shape[0] // stamp_size
+
+    method = 'auto'
+
     cen = (stamp_size - 1) / 2
     psf_cen = (psf_stamp_size - 1)/2
+    noise = 1
+    flux = 64000
+    gal = galsim.Exponential(
+        half_light_radius=0.5
+    ).withFlux(
+        flux
+    ).shear(
+        g1=0.02, g2=0.0)
 
-    def _gen_data():
-        for yind in range(ny):
-            for xind in range(nx):
-                psf_im = psf_image[
-                    yind*psf_stamp_size:(yind+1)*psf_stamp_size,
-                    xind*psf_stamp_size:(xind+1)*psf_stamp_size]
-                psf_noise = np.sqrt(np.sum(psf_im**2)) / 500
-                wgt = 0.0 * psf_im + 1.0 / psf_noise**2
-                psf_jac = ngmix.DiagonalJacobian(
-                    scale=0.263,
-                    x=psf_cen,
-                    y=psf_cen)
-                psf_obs = ngmix.Observation(
-                    image=psf_im,
-                    weight=wgt,
-                    jacobian=psf_jac
-                )
+    if not gauss_psf:
+        piff_cats = np.loadtxt('piff_cat.txt', dtype=str)
+        piff_file = rng.choice(piff_cats)
+        psf_model = DES_Piff(piff_file)
+        print('piff file:', piff_file)
 
-                im = image[
-                    yind*stamp_size:(yind+1)*stamp_size,
-                    xind*stamp_size:(xind+1)*stamp_size]
-                jac = ngmix.DiagonalJacobian(
-                    scale=0.263,
-                    x=cen,
-                    y=cen)
-                wgt = 0.0 * im + 1.0 / noise**2
-                nse = rng.normal(size=im.shape) * noise
-                obs = ngmix.Observation(
-                    image=im,
-                    weight=wgt,
-                    noise=nse,
-                    bmask=np.zeros_like(im, dtype=np.int32),
-                    ormask=np.zeros_like(im, dtype=np.int32),
-                    jacobian=jac,
-                    psf=psf_obs
-                )
-                mbobs = ngmix.MultiBandObsList()
-                obslist = ngmix.ObsList()
-                obslist.append(obs)
-                mbobs.append(obslist)
+    if jacobian_dict['dudy'] != 0 or jacobian_dict['dvdx'] != 0:
+        print('jacobian:', jacobian_dict)
 
-                mbobs.meta['id'] = xind + nx*yind
-                # these settings do not matter that much I think
-                mbobs[0].meta['Tsky'] = 1
-                mbobs[0].meta['magzp_ref'] = 26.5
-                mbobs[0][0].meta['orig_col'] = xind
-                mbobs[0][0].meta['orig_row'] = yind
-
-                yield mbobs
+    galsim_jac = galsim.JacobianWCS(
+        dudx=jacobian_dict['dudx'],
+        dudy=jacobian_dict['dudy'],
+        dvdx=jacobian_dict['dvdx'],
+        dvdy=jacobian_dict['dvdy'])
 
     data = []
-    for mbobs in tqdm.tqdm(_gen_data(), total=nx*ny):
+    for ind in tqdm.trange(n_sims):
+        ################################
+        # make the obs
+
+        # first get PSF
+        x = rng.uniform(low=1, high=2048)
+        y = rng.uniform(low=1, high=2048)
+
+        if gauss_psf:
+            psf = galsim.Gaussian(fwhm=0.9).withFlux(1)
+        else:
+            psf = psf_model.getPSF(
+                galsim.PositionD(x=x, y=y),
+                galsim_jac)
+
+        psf_im = psf.drawImage(
+            nx=psf_stamp_size,
+            ny=psf_stamp_size,
+            wcs=galsim_jac,
+            method=method).array
+
+        psf_noise = np.sqrt(np.sum(psf_im**2)) / 500
+        wgt = 0.0 * psf_im + 1.0 / psf_noise**2
+        psf_jac = ngmix.Jacobian(
+            x=psf_cen,
+            y=psf_cen,
+            dudx=jacobian_dict['dudx'],
+            dudy=jacobian_dict['dudy'],
+            dvdx=jacobian_dict['dvdx'],
+            dvdy=jacobian_dict['dvdy'])
+        psf_obs = ngmix.Observation(
+            image=psf_im,
+            weight=wgt,
+            jacobian=psf_jac
+        )
+
+        # now render object
+        obj = galsim.Convolve(gal, psf)
+        offset = rng.uniform(low=-0.5, high=0.5, size=2)
+        im = obj.drawImage(
+            nx=stamp_size,
+            ny=stamp_size,
+            wcs=galsim_jac,
+            offset=offset,
+            method=method).array
+        jac = ngmix.Jacobian(
+            x=cen+offset[0],
+            y=cen+offset[1],
+            dudx=jacobian_dict['dudx'],
+            dudy=jacobian_dict['dudy'],
+            dvdx=jacobian_dict['dvdx'],
+            dvdy=jacobian_dict['dvdy'])
+        wgt = np.ones_like(im) / noise**2
+        nse = rng.normal(size=im.shape) * noise
+        im += (rng.normal(size=im.shape) * noise)
+        obs = ngmix.Observation(
+            image=im,
+            weight=wgt,
+            noise=nse,
+            bmask=np.zeros_like(im, dtype=np.int32),
+            ormask=np.zeros_like(im, dtype=np.int32),
+            jacobian=jac,
+            psf=psf_obs
+        )
+
+        # build the mbobs
+        mbobs = ngmix.MultiBandObsList()
+        obslist = ngmix.ObsList()
+        obslist.append(obs)
+        mbobs.append(obslist)
+
+        mbobs.meta['id'] = ind+1
+        # these settings do not matter that much I think
+        mbobs[0].meta['Tsky'] = 1
+        mbobs[0].meta['magzp_ref'] = 26.5
+        mbobs[0][0].meta['orig_col'] = ind+1
+        mbobs[0][0].meta['orig_row'] = ind+1
+
+        ################################
+        # run the fitter
         mcal = MetacalFitter(CONFIG, 1, rng)
         mcal.go([mbobs])
         res = mcal.result
@@ -190,7 +246,6 @@ def _result_to_dict(data):
             sh_col = col + '_%s' % sh
             if col in data.dtype.names:
                 sh_cat[col] = data[col]
-                continue
             elif sh_col in data.dtype.names:
                 sh_cat[col] = data[sh_col]
             else:

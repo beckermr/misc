@@ -1,9 +1,37 @@
 import numpy as np
-import tqdm
 import glob
 import pickle
 import joblib
 import itertools
+import numba
+
+
+@numba.njit
+def _jack_est(g1, R11, g2, R22):
+    g1bar = np.mean(g1)
+    R11bar = np.mean(R11)
+    g2bar = np.mean(g2)
+    R22bar = np.mean(R22)
+    n = g1.shape[0]
+    fac = n / (n-1)
+    m_samps = np.zeros_like(g1)
+    c_samps = np.zeros_like(g1)
+
+    for i in range(n):
+        _g1 = fac * (g1bar - g1[i]/n)
+        _R11 = fac * (R11bar - R11[i]/n)
+        _g2 = fac * (g2bar - g2[i]/n)
+        _R22 = fac * (R22bar - R22[i]/n)
+        m_samps[i] = _g1 / _R11 - 1
+        c_samps[i] = _g2 / _R22
+
+    m = np.mean(m_samps)
+    c = np.mean(c_samps)
+
+    m_err = np.sqrt(np.sum((m - m_samps)**2) / fac)
+    c_err = np.sqrt(np.sum((c - c_samps)**2) / fac)
+
+    return m, m_err, c, c_err
 
 
 def estimate_m_and_c(results):
@@ -56,22 +84,7 @@ def estimate_m_and_c(results):
     g2 = g2[msk]
     R22 = R22[msk]
 
-    x1 = R11
-    y1 = g1
-    x2 = R22
-    y2 = g2
-
-    rng = np.random.RandomState(seed=100)
-    mvals = []
-    cvals = []
-    for _ in tqdm.trange(500, leave=False):
-        ind = rng.choice(len(y1), replace=True, size=len(y1))
-        mvals.append(np.mean(y1[ind]) / np.mean(x1[ind]) - 1)
-        cvals.append(np.mean(y2[ind]) / np.mean(x2[ind]))
-
-    return (
-        np.mean(y1) / np.mean(x1) - 1, np.std(mvals),
-        np.mean(y2) / np.mean(x2), np.std(cvals))
+    return _jack_est(g1, R11, g2, R22)
 
 
 def _func(fname):
@@ -99,12 +112,24 @@ pres = [i for i in itertools.chain.from_iterable(outputs)]
 m, msd, c, csd = estimate_m_and_c(pres)
 
 print('s2n:', s2n)
-print("""\
-# of sims: {n_sims}
-m       : {m:f} +/- {msd:f}
-c       : {c:f} +/- {csd:f}""".format(
-    n_sims=len(pres),
-    m=m,
-    msd=msd,
-    c=c,
-    csd=csd), flush=True)
+
+if np.abs(m) < 0.01:
+    print("""\
+    # of sims: {n_sims}
+    m [1e-3]: {m:f} +/- {msd:f}
+    c [1e-4]: {c:f} +/- {csd:f}""".format(
+        n_sims=len(pres),
+        m=m/1e-3,
+        msd=msd/1e-3,
+        c=c/1e-4,
+        csd=csd/1e-4), flush=True)
+else:
+    print("""\
+    # of sims: {n_sims}
+    m       : {m:f} +/- {msd:f}
+    c       : {c:f} +/- {csd:f}""".format(
+        n_sims=len(pres),
+        m=m,
+        msd=msd,
+        c=c,
+        csd=csd), flush=True)

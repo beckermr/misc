@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+import logging
+import sys
+
+import click
+
+from matts_misc.metacal_runner.run_metacal import run_metacal
+
+for lib in ['matts_misc.metacal_runner']:
+    lgr = logging.getLogger(lib)
+    hdr = logging.StreamHandler(sys.stdout)
+    hdr.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+    lgr.setLevel(logging.DEBUG)
+    lgr.addHandler(hdr)
+
+
+@click.command()
+@click.argument('meds_files', nargs=-1)
+@click.option('--output-file', type=str, required=True,
+              help='the output filename')
+@click.option('--seed', type=int, required=True,
+              help='the base RNG seed')
+def metacal(meds_files, seed, output_file):
+    run_metacal(
+        meds_files=meds_files,
+        output_file=output_file,
+        seed=seed)
+
+
+if __name__ == '__main__':
+    metacal()

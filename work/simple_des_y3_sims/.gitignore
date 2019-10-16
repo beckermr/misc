@@ -1,0 +1,6 @@
+*.fits
+*.fits.fz
+*_info.yaml
+example_for_testing/outputs/*
+v*/outputs*/*
+v*/job_*.sh

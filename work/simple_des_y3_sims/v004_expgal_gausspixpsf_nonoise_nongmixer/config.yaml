@@ -1,0 +1,13 @@
+gal_kws:
+  type: exp
+  n_grid: 300
+  g1: 0.02
+  g2: 0.0
+
+psf_kws:
+  type: gauss-pix
+  gstd: 0.0
+  fwhm_frac_std: 0.0
+
+true_detection:
+  box_size: 32
