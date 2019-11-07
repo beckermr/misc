@@ -5,9 +5,34 @@ from parsl.executors import HighThroughputExecutor
 
 from parsl.configs.local_threads import config
 
-SCHED_OPTS = ""
-WORKER_INIT = ""
-WALLTIME = ""
+SCHED_OPTS = """
+kill_sig        = SIGINT
++Experiment     = "astro"
+GetEnv          = True
+Notification    = Never
+Image_Size       =  1000000
+"""
+
+WORKER_INIT = """
+export OMP_NUM_THREADS=1
+
+if [[ -n $_CONDOR_SCRATCH_DIR ]]; then
+    # the condor system creates a scratch directory for us,
+    # and cleans up afterward
+    tmpdir=$_CONDOR_SCRATCH_DIR
+    export TMPDIR=$tmpdir
+else
+    # otherwise use the TMPDIR
+    tmpdir='.'
+    mkdir -p $tmpdir
+fi
+
+source activate bnl
+
+echo `which python`
+"""
+
+WALLTIME = "48:00:00"
 
 condor_config = Config(
     executors=[
@@ -40,7 +65,7 @@ def app_sum(inputs=[]):
     return sum(inputs)
 
 
-items = range(0, 1000)
+items = range(0, 30)
 
 mapped_results = []
 for i in items:
