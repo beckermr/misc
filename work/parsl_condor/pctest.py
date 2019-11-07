@@ -27,7 +27,7 @@ condor_config = Config(
     ],
 )
 
-parsl.load(config)
+parsl.load(condor_config)
 
 
 @parsl.python_app
