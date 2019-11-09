@@ -38,12 +38,14 @@ condor_config = Config(
     executors=[
         HighThroughputExecutor(
             worker_debug=True,
+            max_workers=1,
             provider=CondorProvider(
                 cores_per_slot=1,
                 mem_per_slot=2,
                 nodes_per_block=1,
-                init_blocks=10,
-                max_blocks=10,
+                init_blocks=100,
+                parallelism=0.01,
+                max_blocks=10000,
                 scheduler_options=SCHED_OPTS,
                 worker_init=WORKER_INIT,
                 walltime=WALLTIME
@@ -65,7 +67,7 @@ def app_sum(inputs=[]):
     return sum(inputs)
 
 
-items = range(0, 30)
+items = range(0, 10000)
 
 mapped_results = []
 for i in items:
