@@ -8,12 +8,15 @@ from parsl.configs.local_threads import config
 SCHED_OPTS = """
 kill_sig        = SIGINT
 +Experiment     = "astro"
-GetEnv          = True
 Notification    = Never
 Image_Size       =  1000000
 """
+# GetEnv          = True
 
 WORKER_INIT = """
+
+source ~/.bashrc
+
 export OMP_NUM_THREADS=1
 
 if [[ -n $_CONDOR_SCRATCH_DIR ]]; then
