@@ -40,7 +40,7 @@ condor_config = Config(
         HighThroughputExecutor(
             worker_debug=True,
             max_workers=1,
-            address=address_by_query(),
+            address='astro0010.rcf.bnl.gov',
             provider=CondorProvider(
                 cores_per_slot=1,
                 mem_per_slot=2,
