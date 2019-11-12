@@ -68,7 +68,8 @@ if __name__ == '__main__':
                 "Expecting nodes_per_block = 1, got:{}".format(
                     config.executors[0].provider.nodes_per_block))
             parsl.load(config)
-        except Exception:
+        except Exception as e:
+            print(e)
             print("Failed to load the requested config : ", args.sitespec)
             exit(0)
 
