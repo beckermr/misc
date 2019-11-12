@@ -72,7 +72,7 @@ def app_sum(inputs=[]):
     return sum(inputs)
 
 
-items = range(0, 100)
+items = range(0, 1000)
 
 mapped_results = []
 for i in items:
