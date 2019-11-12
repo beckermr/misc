@@ -1,7 +1,6 @@
 from parsl.providers import CondorProvider
 from parsl.config import Config
 from parsl.executors import HighThroughputExecutor
-from parsl.addresses import address_by_query
 
 SCHED_OPTS = """
 kill_sig        = SIGINT
@@ -35,7 +34,7 @@ echo `which python`
 
 WALLTIME = "48:00:00"
 
-condor_config = Config(
+config = Config(
     executors=[
         HighThroughputExecutor(
             worker_debug=True,
