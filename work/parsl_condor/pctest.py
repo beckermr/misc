@@ -43,7 +43,7 @@ condor_config = Config(
         HighThroughputExecutor(
             worker_debug=True,
             max_workers=1,
-            address=address_by_name(),
+            address=address_by_hostname(),
             provider=CondorProvider(
                 cores_per_slot=1,
                 mem_per_slot=2,
