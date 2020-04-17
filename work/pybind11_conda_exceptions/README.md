@@ -13,3 +13,9 @@ make test
 cd tests
 pytest -vvs test_exception_catching_python
 ```
+
+### old lib install
+
+```bash
+conda install -c conda-forge/label/broken libcxx==9.0.0-0
+```
