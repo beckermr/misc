@@ -1,10 +1,7 @@
-import builtins
-
 from . import exceptions
 
 __all__ = [
     "register",
-    "ExceptionMeta",
     "LSSTException",
     "translate"
 ]
@@ -20,17 +17,8 @@ def register(cls):
     return cls
 
 
-class ExceptionMeta(type):
-    """A metaclass for custom exception wrappers, which adds lookup of class attributes
-    by delegating to the Swig-generated wrapper.
-    """
-
-    def __getattr__(cls, name):
-        return getattr(cls.WrappedClass, name)
-
-
 @register
-class LSSTException(builtins.Exception):  # , metaclass=ExceptionMeta):
+class LSSTException(Exception):
     """The base class for Python-wrapped LSST C++ exceptions.
     """
 
