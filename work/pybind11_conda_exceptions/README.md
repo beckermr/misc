@@ -10,8 +10,6 @@ conda create -n pybind11-test python=3.7 pybind11 compilers pytest git make
 
 ```bash
 make test
-cd tests
-pytest -vvs test_exception_catching_python
 ```
 
 ### old lib install
