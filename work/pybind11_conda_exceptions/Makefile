@@ -1,6 +1,6 @@
 # COMP=/usr/bin/clang++
 COMP=${CXX}
-ifeq ($(shell uname -s), "Linux")
+ifeq ($(shell uname -s), Linux)
 	EXTRA_FLAGS=
 else
 	EXTRA_FLAGS=-undefined dynamic_lookup
