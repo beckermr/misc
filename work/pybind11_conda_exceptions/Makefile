@@ -1,4 +1,3 @@
-# COMP=/usr/bin/clang++
 COMP=${CXX}
 ifeq ($(shell uname -s), Linux)
 	EXTRA_FLAGS=
@@ -6,8 +5,20 @@ ifeq ($(shell uname -s), Linux)
 else
 	EXTRA_FLAGS=-undefined dynamic_lookup
 	PRINTLIBS=DYLD_PRINT_LIBRARIES=YES
-endif
 
+	USE_SYSTEM?=NO
+
+	ifeq ($(USE_SYSTEM), YES)
+		COMP=/usr/bin/clang++
+		CXXFLAGS=\
+			-march=core2 -mtune=haswell -mssse3 -ftree-vectorize -fPIC -fPIE \
+			-fstack-protector-strong -O2 -pipe -stdlib=libc++ -fvisibility-inlines-hidden \
+			-std=c++14 -fmessage-length=0
+		LDFLAGS=
+	endif
+
+
+endif
 
 test: pymod
 	cd tests && \
