@@ -5,12 +5,7 @@
 
 #include "../src/Exception.h"
 
-using namespace exceptions;
-
 namespace py = pybind11;
-
-namespace exceptions {
-namespace {
 
 /**
  * Raise a Python exception that wraps the given C++ exception instance.
@@ -51,29 +46,24 @@ void raiseLsstException(py::object &pyex) {
         }
     }
 }
-}  // namespace
 
 PYBIND11_MODULE(exceptions, mod) {
-    py::class_<LSSTException> clsLSSTException(mod, "LSSTException");
+    py::class_<lsst_exceptions::LSSTException> clsLSSTException(mod, "LSSTException");
     clsLSSTException.def(py::init<std::string const &>())
-            .def("what", &LSSTException::what)
-            .def("clone", &LSSTException::clone);
-
-    py::class_<CustomError, LSSTException> clsCustomError(mod, "CustomError");
-    clsCustomError.def(py::init<std::string const &>());
+            .def("what", &lsst_exceptions::LSSTException::what)
+            .def("clone", &lsst_exceptions::LSSTException::clone);
 
     py::register_exception_translator([](std::exception_ptr p) {
         try {
             if (p) {
-              printf("standard throw!\n");
+              printf("\n==========\nstandard throw!\n==========\n");
               std::rethrow_exception(p);
             }
-        } catch (const LSSTException &e) {
+        } catch (const lsst_exceptions::LSSTException &e) {
+            printf("\n==========\ncaught\n==========\n");
             py::object current_exception;
             current_exception = py::cast(e.clone(), py::return_value_policy::take_ownership);
             raiseLsstException(current_exception);
         }
     });
 }
-
-}  // namespace exceptions

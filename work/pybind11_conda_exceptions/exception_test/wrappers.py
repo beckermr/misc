@@ -1,6 +1,3 @@
-
-
-import warnings
 import builtins
 
 from . import exceptions
@@ -8,7 +5,7 @@ from . import exceptions
 __all__ = [
     "register",
     "ExceptionMeta",
-    "LSSTException", "CustomError",
+    "LSSTException",
     "translate"
 ]
 
@@ -64,15 +61,10 @@ class LSSTException(builtins.Exception, metaclass=ExceptionMeta):
         return self.cpp.what()
 
 
-@register
-class CustomError(LSSTException):
-    WrappedClass = exceptions.CustomError
-
-
 def translate(cpp):
     """Translate a C++ Exception instance to Python and return it."""
     PyType = registry.get(type(cpp), None)
     if PyType is None:
-        warnings.warn("Could not find appropriate Python type for C++ Exception")
+        print("Could not find appropriate Python type for C++ Exception")
         PyType = Exception
     return PyType(cpp)

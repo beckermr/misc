@@ -1,7 +1,3 @@
-#ifndef __GNUC__
-#define __attribute__(x) /*NOTHING*/
-#endif
-
 #include <cstring>
 #include <ostream>
 #include <sstream>
@@ -9,7 +5,7 @@
 
 #include "Exception.h"
 
-namespace exceptions {
+namespace lsst_exceptions {
 
 LSSTException::LSSTException(std::string const& message) : _message(message) {}
 
