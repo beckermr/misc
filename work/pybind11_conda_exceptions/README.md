@@ -3,7 +3,7 @@
 ### install your env
 
 ```bash
-conda create -n pybind11-test python=3.7 pybind11 compilers ipython pytest
+conda create -n pybind11-test python=3.7 pybind11 compilers pytest git make
 ```
 
 ### run

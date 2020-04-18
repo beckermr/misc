@@ -1,5 +1,11 @@
 # COMP=/usr/bin/clang++
 COMP=${CXX}
+ifeq ($(shell uname -s), "Linux")
+	EXTRA_FLAGS=
+else
+	EXTRA_FLAGS=-undefined dynamic_lookup
+endif
+
 
 test: pymod
 	cd tests && \
@@ -7,7 +13,7 @@ test: pymod
 		`python -m pybind11 --includes` \
 		-c testLib.cc \
 		-o _testLib.o && \
-	${COMP} ${CXXFLAGS} ${LDFLAGS} -undefined dynamic_lookup -shared -fPIC \
+	${COMP} ${CXXFLAGS} ${LDFLAGS} ${EXTRA_FLAGS} -shared -fPIC \
 		`python -m pybind11 --includes` \
 		_testLib.o \
 		../src/Exception.o \
@@ -23,7 +29,7 @@ pymod: cpp
 		`python -m pybind11 --includes` \
 		-c exceptions.cc \
 		-o _exceptions.o && \
-	${COMP} ${CXXFLAGS} ${LDFLAGS} -undefined dynamic_lookup -shared -fPIC \
+	${COMP} ${CXXFLAGS} ${LDFLAGS} ${EXTRA_FLAGS} -shared -fPIC \
 		`python -m pybind11 --includes` \
 		_exceptions.o \
 		../src/Exception.o \
