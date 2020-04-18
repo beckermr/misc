@@ -30,7 +30,7 @@ class ExceptionMeta(type):
 
 
 @register
-class LSSTException(builtins.Exception, metaclass=ExceptionMeta):
+class LSSTException(builtins.Exception):  # , metaclass=ExceptionMeta):
     """The base class for Python-wrapped LSST C++ exceptions.
     """
 

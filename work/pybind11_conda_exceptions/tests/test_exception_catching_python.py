@@ -1,9 +1,9 @@
-import pytest
-
-import exception_test
+from __future__ import print_function
 import testLib
 
 
-def test_exception_catching_python_smoke():
-    with pytest.raises(exception_test.LSSTException):
-        testLib.fail("message1")
+try:
+    testLib.fail("message1")
+except Exception as e:
+    print(repr(e))
+    assert repr(e) == "LSSTException('message1')"
