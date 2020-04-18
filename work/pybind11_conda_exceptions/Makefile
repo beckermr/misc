@@ -4,6 +4,7 @@ ifeq ($(shell uname -s), Linux)
 	EXTRA_FLAGS=
 else
 	EXTRA_FLAGS=-undefined dynamic_lookup
+	PRINTLIBS=DYLD_PRINT_LIBRARIES=YES
 endif
 
 
@@ -18,7 +19,7 @@ test: pymod
 		_testLib.o \
 		../src/Exception.o \
 		-o testLib`python3-config --extension-suffix` && \
-	 pytest -vvs test_exception_catching_python.py && \
+	  ${PRINTLIBS} pytest -vvs test_exception_catching_python.py && \
 	cd -
 
 # chmod u+x testLib`python3-config --extension-suffix` && \
@@ -43,3 +44,6 @@ cpp:
 		-c Exception.cc \
 		-o Exception.o && \
 	cd -
+
+clean:
+	rm -f src/*.o src/*.so tests/*.o tests/*.so exception_test/*.o exception_test/*.so
