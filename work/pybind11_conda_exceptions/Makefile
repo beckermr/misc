@@ -2,6 +2,7 @@
 COMP=${CXX}
 ifeq ($(shell uname -s), Linux)
 	EXTRA_FLAGS=
+	PRINTLIBS=
 else
 	EXTRA_FLAGS=-undefined dynamic_lookup
 	PRINTLIBS=DYLD_PRINT_LIBRARIES=YES
