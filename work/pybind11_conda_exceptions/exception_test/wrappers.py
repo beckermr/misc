@@ -49,6 +49,11 @@ class LSSTException(Exception):
         return self.cpp.what()
 
 
+@register
+class CustomError(LSSTException):
+    WrappedClass = exceptions.CustomError
+
+
 def translate(cpp):
     """Translate a C++ Exception instance to Python and return it."""
     PyType = registry.get(type(cpp), None)

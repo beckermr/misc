@@ -53,6 +53,9 @@ PYBIND11_MODULE(exceptions, mod) {
             .def("what", &lsst_exceptions::LSSTException::what)
             .def("clone", &lsst_exceptions::LSSTException::clone);
 
+    py::class_<lsst_exceptions::CustomError, lsst_exceptions::LSSTException> clsCustomError(mod, "CustomError");
+    clsCustomError.def(py::init<std::string const &>());
+
     py::register_exception_translator([](std::exception_ptr p) {
         try {
             if (p) {

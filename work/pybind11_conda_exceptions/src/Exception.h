@@ -19,6 +19,12 @@ class LSST_EXPORT LSSTException : public std::exception {
       std::string _message;
 };
 
+class LSST_EXPORT CustomError : public LSSTException {
+  public:
+      CustomError(std::string const& message) : LSSTException(message){};
+      virtual lsst_exceptions::LSSTException* clone(void) const { return new lsst_exceptions::CustomError(*this); };
+};
+
 }
 
 #endif

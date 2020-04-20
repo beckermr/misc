@@ -21,42 +21,38 @@ else
 
 endif
 
-test: pymod
+test: clean pymod
 	cd tests && \
-	${COMP} ${CXXFLAGS} -fPIC \
+	${COMP} ${CXXFLAGS} ${LDFLAGS} ${EXTRA_FLAGS} -shared -fPIC \
 		`python -m pybind11 --includes` \
-		-c testLib.cc \
-		-o _testLib.o && \
-	${COMP} ${CXXFLAGS} ${LDFLAGS} ${EXTRA_FLAGS} -shared \
-		`python -m pybind11 --includes` \
-		_testLib.o \
-		../src/Exception.o \
+		testLib.cc \
+		-L../src -lException \
 		-o testLib${SUFFIX} && \
-	  ${PRINTLIBS} python test_exception_catching_python.py && \
+		echo "\n\n============================================\ntesting\n============================================\n" && \
+	  DYLD_FALLBACK_LIBRARY_PATH=../src ${PRINTLIBS} python test_exception_catching_python.py && \
 	cd -
 
 # chmod u+x testLib`python3-config --extension-suffix` && \
 
 pymod: cpp
 	cd exception_test && \
-	${COMP} ${CXXFLAGS} -fPIC \
+	${COMP} ${CXXFLAGS} ${LDFLAGS} ${EXTRA_FLAGS} -shared -fPIC \
 		`python -m pybind11 --includes` \
-		-c exceptions.cc \
-		-o _exceptions.o && \
-	${COMP} ${CXXFLAGS} ${LDFLAGS} ${EXTRA_FLAGS} -shared \
-		`python -m pybind11 --includes` \
-		_exceptions.o \
-		../src/Exception.o \
+		exceptions.cc \
+		-L../src -lException \
 		-o exceptions${SUFFIX} && \
 	cd - && \
 	python -m pip install -e .
 
 cpp:
 	cd src && \
-	${COMP} ${CXXFLAGS} -fPIC \
-		-c Exception.cc \
-		-o Exception.o && \
+	${COMP} ${CXXFLAGS} ${LDFLAGS} ${EXTRA_FLAGS} -shared -fPIC \
+		Exception.cc \
+		-o libException.dylib && \
 	cd -
 
 clean:
-	rm -f src/*.o src/*.so tests/*.o tests/*.so exception_test/*.o exception_test/*.so
+	rm -f \
+		src/*.o src/*.so src/*.dylib \
+		tests/*.o tests/*.so tests/*.dylib \
+		exception_test/*.o exception_test/*.so exception_test/*.dylib
