@@ -3,7 +3,8 @@ from . import exceptions
 __all__ = [
     "register",
     "LSSTException",
-    "translate"
+    "translate",
+    "CustomError",
 ]
 
 registry = {}
