@@ -1,11 +1,11 @@
 COMP=${CXX}
 ifeq ($(shell uname -s), Linux)
 	EXTRA_FLAGS=
-	PRINTLIBS=
+	PRINTLIBS=LD_LIBRARY_PATH=../src
 	SUFFIX=$(shell python3-config --extension-suffix)
 else
 	EXTRA_FLAGS=-undefined dynamic_lookup
-	PRINTLIBS=DYLD_PRINT_LIBRARIES=YES
+	PRINTLIBS=DYLD_FALLBACK_LIBRARY_PATH=../src DYLD_PRINT_LIBRARIES=YES
 	SUFFIX=`python3-config --extension-suffix`
 	USE_SYSTEM?=NO
 
@@ -29,7 +29,7 @@ test: clean pymod
 		-L../src -lException \
 		-o testLib${SUFFIX} && \
 		echo "\n\n============================================\ntesting\n============================================\n" && \
-	  DYLD_FALLBACK_LIBRARY_PATH=../src ${PRINTLIBS} python test_exception_catching_python.py && \
+	  ${PRINTLIBS} python test_exception_catching_python.py && \
 	cd -
 
 # chmod u+x testLib`python3-config --extension-suffix` && \
