@@ -3,11 +3,13 @@ ifeq ($(shell uname -s), Linux)
 	EXTRA_FLAGS=
 	PRINTLIBS=LD_LIBRARY_PATH=../src
 	SUFFIX=$(shell python3-config --extension-suffix)
+	SOEXT=.so
 else
 	EXTRA_FLAGS=-undefined dynamic_lookup
 	PRINTLIBS=DYLD_FALLBACK_LIBRARY_PATH=../src DYLD_PRINT_LIBRARIES=YES
 	SUFFIX=`python3-config --extension-suffix`
 	USE_SYSTEM?=NO
+	SOEXT=.dylib
 
 	ifeq ($(USE_SYSTEM), YES)
 		COMP=/usr/bin/clang++
@@ -48,7 +50,7 @@ cpp:
 	cd src && \
 	${COMP} ${CXXFLAGS} ${LDFLAGS} ${EXTRA_FLAGS} -shared -fPIC \
 		Exception.cc \
-		-o libException.dylib && \
+		-o libException${SOEXT} && \
 	cd -
 
 clean:
