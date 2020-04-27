@@ -242,7 +242,7 @@ def test_interpolate_image_and_noise_cs_gauss_circle_many(
     bmask = np.zeros_like(image_unmasked, dtype=np.int32)
     bad_flags = 0
 
-    _nlscale = np.sqrt(np.median(weight))
+    _nlscale = np.sqrt(np.median(weight)) * 10
 
     def _scale(__im):
         return np.arcsinh(__im * _nlscale)
