@@ -4,19 +4,32 @@ set -e
 
 export CONDA_SMITHY_LOGLEVEL=DEBUG
 
-# pushd cf-test-master
-# for linux in circle travis azure; do
-#   for osx in circle travis azure; do
-#     git co master
-#     git co -b ${linux}-${osx}
-#     git push --set-upstream origin ${linux}-${osx}
-#   done
-# done
-# popd
+git clone https://github.com/conda-forge/cf-autotick-bot-test-package-feedstock.git cf-test-master
+pushd cf-test-master
+for linux in circle travis azure; do
+  for osx in circle travis azure; do
+    git co master
+    git co -b ${linux}-${osx}-$1
+    git push --set-upstream origin ${linux}-${osx}-$1
+  done
+done
+popd
+rm -rf cf-test-master
 
-pushd cf-autotick-bot-test-package-feedstock
+git clone https://github.com/beckermr/cf-autotick-bot-test-package-feedstock.git cf-autotick-bot-test-package-feedstock-$1
+pushd cf-autotick-bot-test-package-feedstock-$1
+
+git remote add upstream https://github.com/conda-forge/cf-autotick-bot-test-package-feedstock.git
+
+# git branch -r | grep -v '\->' | while read remote; do git branch --track "${remote#origin/}" "$remote"; done
+git fetch --all
+git pull --all
+
 for linux in circle travis azure; do
   for osx in circle travis azure; do
     python ../make_prs.py ${linux} ${osx} $1
   done
 done
+
+popd
+rm -rf cf-autotick-bot-test-package-feedstock-$1
