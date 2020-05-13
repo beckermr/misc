@@ -1,6 +1,6 @@
 # How to use this code
 
-1. Check out the repo https://github.com/conda-forge/cf-autotick-bot-test-package-feedstock.git
+1. Check out the repo https://github.com/beckermr/cf-autotick-bot-test-package-feedstock.git
 
 2. Run the script `make_branches.sh` feeding it the version number of the test as `vXYZ`
    (e.g., `./make_branches.sh v8`).
