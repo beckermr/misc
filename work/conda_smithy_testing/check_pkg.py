@@ -15,8 +15,8 @@ build = "_" + sys.argv[1]
 ver = "0.9"
 
 num_found = 0
-for linux in ["circle", "travis", "azure"]:
-    for osx in ["circle", "travis", "azure"]:
+for linux in ["azure"]:
+    for osx in ["azure"]:
         for subdir in ["linux-64", "osx-64", "linux-ppc64le", "linux-aarch64"]:
             found = False
             cislug = "-%s%s_" % (linux, osx)
@@ -33,4 +33,4 @@ for linux in ["circle", "travis", "azure"]:
 
             assert found, (subdir, linux, osx)
 
-assert num_found == 36
+assert num_found == 4, num_found

@@ -2,14 +2,18 @@
 
 set -e
 
+rm -rf cf-autotick-bot-test-package-feedstock*
+rm -rf cf-test-master*
+
 export CONDA_SMITHY_LOGLEVEL=DEBUG
 
 git clone https://github.com/conda-forge/cf-autotick-bot-test-package-feedstock.git cf-test-master
 pushd cf-test-master
-for linux in circle travis azure; do
-  for osx in circle travis azure; do
+for linux in azure; do
+  for osx in azure; do
     git co master
     git co -b ${linux}-${osx}-$1
+    git commit --allow-empty -am '[ci skip] branch for testing'
     git push --set-upstream origin ${linux}-${osx}-$1
   done
 done
@@ -25,8 +29,8 @@ git remote add upstream https://github.com/conda-forge/cf-autotick-bot-test-pack
 git fetch --all
 git pull --all
 
-for linux in circle travis azure; do
-  for osx in circle travis azure; do
+for linux in azure; do
+  for osx in azure; do
     python ../make_prs.py ${linux} ${osx} $1
   done
 done

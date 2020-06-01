@@ -87,6 +87,8 @@ with open("conda-forge.yml", "r") as fp:
 
 cfg["provider"]["linux"] = sys.argv[1]
 cfg["provider"]["osx"] = sys.argv[2]
+cfg["provider"]["win"] = "appveyor"
+cfg["provider"]["linux_aarch64"] = "drone"
 cfg["conda_forge_output_validation"] = True
 
 with open("conda-forge.yml", "w") as fp:
