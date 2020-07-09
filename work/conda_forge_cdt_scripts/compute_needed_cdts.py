@@ -85,6 +85,10 @@ for slug in CDT_SLUGS:
     for cdt in abstract_cdts:
         all_cdts.add(cdt + slug)
 
+print("# of curr CDTs:", len(curr_cdts))
+print("# of total CDTs:", len(all_cdts))
+print("# of needed CDTs:", len(all_cdts - curr_cdts))
+
 print("needed cdts:")
 for cdt in sorted(all_cdts - curr_cdts):
     print("    " + cdt)
@@ -92,3 +96,20 @@ for cdt in sorted(all_cdts - curr_cdts):
 with open("needed_cdt_list.yaml", "w") as fp:
     for cdt in sorted(all_cdts - curr_cdts):
         fp.write(cdt + ': false\n')
+
+
+print("all cdt slugs:")
+all_cdt_slugs = set()
+for cdt in sorted(all_cdts):
+    cdt_slug = cdt.rsplit("-", maxsplit=2)[0]
+    all_cdt_slugs.add(cdt_slug)
+
+needed_cdt_slugs = set()
+for cdt in sorted(all_cdts - curr_cdts):
+    cdt_slug = cdt.rsplit("-", maxsplit=2)[0]
+    needed_cdt_slugs.add(cdt_slug)
+
+with open("cdt_slugs.yaml", "w") as fp:
+    for cdt_slug in sorted(all_cdt_slugs):
+        fp.write(cdt_slug + ':\n  custom: false\n')
+        print("    " + cdt_slug)

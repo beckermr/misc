@@ -56,11 +56,11 @@ source:
     no_hoist: true
     folder: binary
   - url: {srcrpmurl}
-    folder: source
     no_hoist: true
+    folder: source
 
 build:
-  number: 2
+  number: {build_number}
   noarch: generic
   missing_dso_whitelist:
     - '*'
@@ -196,12 +196,6 @@ def yaml_quote_string(string):
         .replace("\n...\n", "")
         .replace("\n", "\n  ")
     )
-
-
-def package_exists(package_name):
-    """This is a simple function returning True/False for if a requested
-    package string exists in the add-on repository."""
-    return True
 
 
 def cache_file(src_cache, url, fn=None, checksummer=hashlib.sha256):
@@ -483,8 +477,8 @@ def valid_depends(depends):
 
 def remap_license(rpm_license):
     mapping = {
-        "lgplv2+": "LGPL (>= 2)",
-        "gplv2+": "GPL (>= 2)",
+        "lgplv2+": "LGPL-2.0-or-later",
+        "gplv2+": "GPL-2.0-or-later",
         "public domain (uncopyrighted)": "Public-Domain",
         "public domain": "Public-Domain",
         "mit/x11": "MIT",
@@ -526,6 +520,7 @@ def write_conda_recipes(
     output_dir,
     override_arch,
     src_cache,
+    build_number,
 ):
     entry, entry_name, arch = find_repo_entry_and_arch(
         repo_primary, architectures, dict({"name": package})
@@ -595,6 +590,7 @@ def write_conda_recipes(
                 output_dir,
                 override_arch,
                 src_cache,
+                build_number,
             )
 
     sn = cdt["short_name"] + "-" + arch
@@ -632,11 +628,18 @@ def write_conda_recipes(
                 dependsstr_run += (
                     "    - "
                     "sysroot_%s ==%s" % (cdt["host_subdir"], cdt["glibc_ver"]))
-                pass
             else:
                 dependsstr_run += (
                     "  run_constrained:\n    - "
                     "sysroot_%s ==99999999999" % cdt["host_subdir"])
+
+            if SINGLE_SYSROOT:
+                if len(dependsstr_host) == 0:
+                    dependsstr_host = "  host:\n"
+                dependsstr_host += (
+                    "    - "
+                    "sysroot_%s ==%s" % (cdt["host_subdir"], cdt["glibc_ver"]))
+                dependsstr_host += "\n"
 
         dependsstr = (
             "requirements:\n" + dependsstr_build + dependsstr_host + dependsstr_run
@@ -648,6 +651,7 @@ def write_conda_recipes(
     d = dict(
         {
             "version": entry["version"]["ver"],
+            "build_number": build_number,
             "packagename": package_cdt_name,
             "hostmachine": cdt["host_machine"],
             "hostsubdir": cdt["host_subdir"],
@@ -701,6 +705,7 @@ def write_conda_recipe(
     override_arch,
     dependency_add,
     config,
+    build_number,
 ):
     cdt_name = distro
     bits = "32" if architecture in ("armv6", "armv7a", "i686", "i386") else "64"
@@ -758,6 +763,7 @@ def write_conda_recipe(
             output_dir,
             override_arch,
             config.src_cache,
+            build_number,
         )
 
 
@@ -771,6 +777,7 @@ def write_conda_recipe(
 @click.option("--distro", default=default_distro, type=str)
 @click.option("--conda-forge-style", default=False, is_flag=True)
 @click.option("--single-sysroot", default=False, is_flag=True)
+@click.option("--build-number", default="2", type=str)
 def skeletonize(
     packages,
     output_dir,
@@ -781,6 +788,7 @@ def skeletonize(
     distro,
     conda_forge_style,
     single_sysroot,
+    build_number,
 ):
     global CONDA_FORGE_STYLE
     CONDA_FORGE_STYLE = conda_forge_style
@@ -801,7 +809,8 @@ def skeletonize(
         recursive,
         not no_override_arch,
         None,
-        config=Config(),
+        Config(),
+        build_number,
     )
 
 
