@@ -328,8 +328,9 @@ def make_objs(
 ):
     if blend:
         if top:
-            dx_pixels = int(16/np.sqrt(2))
-            dy_pixels = int(16/np.sqrt(2))
+            theta = np.random.uniform() * 2.0 * np.pi
+            dx_pixels = 16 * np.cos(theta)
+            dy_pixels = 16 * np.sin(theta)
         else:
             dx_pixels = 16
             dy_pixels = 0
