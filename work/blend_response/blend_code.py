@@ -339,12 +339,11 @@ def make_objs(
     dy = dy_pixels * wcs.scale
 
     dx1 = dx + rng.uniform(low=-0.5, high=0.5) * wcs.scale
-    dx2 = dx + rng.uniform(low=-0.5, high=0.5) * wcs.scale
 
     cen = (npix - 1)/2
 
     cen1 = (cen - dx1/wcs.scale, cen - dy_pixels)
-    cen2 = (cen + dx2/wcs.scale, cen)
+    cen2 = (cen, cen)
 
     obj1 = galsim.Exponential(
         half_light_radius=hlr
