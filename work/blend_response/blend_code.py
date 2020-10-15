@@ -328,8 +328,8 @@ def make_objs(
 ):
     if blend:
         if top:
-            dx_pixels = 0
-            dy_pixels = 16
+            dx_pixels = int(16/np.sqrt(2))
+            dy_pixels = int(16/np.sqrt(2))
         else:
             dx_pixels = 16
             dy_pixels = 0
@@ -343,18 +343,21 @@ def make_objs(
     dy = dy_pixels * wcs.scale
 
     dx1 = dx + rng.uniform(low=-0.5, high=0.5) * wcs.scale
+    dy1 = dy + rng.uniform(low=-0.5, high=0.5) * wcs.scale
+    dx2 = rng.uniform(low=-0.5, high=0.5) * wcs.scale
+    dy2 = rng.uniform(low=-0.5, high=0.5) * wcs.scale
 
     cen = (npix - 1)/2
 
-    cen1 = (cen - dx1/wcs.scale, cen - dy_pixels)
-    cen2 = (cen, cen)
+    cen1 = (cen - dx1/wcs.scale, cen - dy1/wcs.scale)
+    cen2 = (cen - dx2/wcs.scale, cen - dy2/wcs.scale)
 
     obj1 = galsim.Exponential(
         half_light_radius=hlr
-    ).shear(g1=shear, g2=0).shift(dx=-dx1, dy=-dy).withFlux(flux)
+    ).shear(g1=shear, g2=0).shift(dx=-dx1, dy=-dy1).withFlux(flux)
     obj2 = galsim.Exponential(
         half_light_radius=hlr
-    ).shift(dx=0, dy=0).withFlux(flux)
+    ).shift(dx=-dx2, dy=-dy2).withFlux(flux)
 
     im = galsim.Convolve(obj1 + obj2, psf).drawImage(wcs=wcs, nx=npix, ny=npix).array
     im += rng.normal(size=im.shape) * noise
