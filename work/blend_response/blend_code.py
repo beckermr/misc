@@ -323,12 +323,16 @@ def make_ngmix_mbobslist(im, psf, wcs, cen1, cen2, noise, rng, nstamp=33):
 
 
 def make_objs(
-    *, rng, blend, shear,
+    *, rng, blend, shear, top,
     hlr=1.0, flux=1e4, psf_fhwm=0.9, wcs_scale=0.2, npix=251, noise=1,
 ):
     if blend:
-        dx_pixels = 16
-        dy_pixels = 0
+        if top:
+            dx_pixels = 0
+            dy_pixels = 16
+        else:
+            dx_pixels = 16
+            dy_pixels = 0
     else:
         dx_pixels = 63
         dy_pixels = 63
@@ -358,11 +362,11 @@ def make_objs(
     return im, psf, wcs, cen1, cen2, obj1, obj2, noise
 
 
-def run_sim(seed, blend, shear):
+def run_sim(seed, blend, shear, top):
     rng = np.random.RandomState(seed=seed)
 
     im, psf, wcs, cen1, cen2, obj1, obj2, noise = make_objs(
-        rng=rng, blend=blend, shear=shear
+        rng=rng, blend=blend, shear=shear, top=top
     )
 
     obsl = make_ngmix_mbobslist(im, psf, wcs, cen1, cen2, noise, rng)
@@ -389,8 +393,8 @@ def print_data(g1, g2, R11, R22, total, func=print):
     )
 
 
-def _run_job(seed, blend, shear):
-    res = run_sim(seed, blend, shear)
+def _run_job(seed, blend, shear, top):
+    res = run_sim(seed, blend, shear, top)
     R11 = (res['1p']['wmom_g'][:, 0] - res['1m']['wmom_g'][:, 0]) / 0.02
     R22 = (res['2p']['wmom_g'][:, 1] - res['2m']['wmom_g'][:, 1]) / 0.02
     g1 = res['noshear']['wmom_g'][:, 0]
@@ -400,13 +404,14 @@ def _run_job(seed, blend, shear):
 
 @click.command()
 @click.option('--blend', is_flag=True)
+@click.option('--top', is_flag=True)
 @click.option('--max-workers', default=8, type=int)
 @click.option('--shear', type=float, required=True)
 @click.option('--n-samples', default=1000, type=int)
-def main(blend, shear, max_workers, n_samples):
+def main(blend, top, shear, max_workers, n_samples):
     rng = np.random.RandomState(seed=3453425342)
 
-    res = run_sim(rng.randint(1, 2**32-1), blend, shear)
+    res = run_sim(rng.randint(1, 2**32-1), blend, shear, top)
     R11 = (res['1p']['wmom_g'][:, 0] - res['1m']['wmom_g'][:, 0]) / 0.02
     R22 = (res['2p']['wmom_g'][:, 1] - res['2m']['wmom_g'][:, 1]) / 0.02
     g1 = res['noshear']['wmom_g'][:, 0]
@@ -416,7 +421,7 @@ def main(blend, shear, max_workers, n_samples):
 
     with ProcessPoolExecutor(max_workers=max_workers) as exe:
         futs = [
-            exe.submit(_run_job, rng.randint(1, 2**32-1), blend, shear)
+            exe.submit(_run_job, rng.randint(1, 2**32-1), blend, shear, top)
             for _ in tqdm.trange(total-1)
         ]
 
@@ -440,7 +445,7 @@ def main(blend, shear, max_workers, n_samples):
         'n': total,
     }
 
-    with open(f"data_blend{blend}_shear{shear}.json", "w") as fp:
+    with open(f"data_blend{blend}_shear{shear}_top{top}.json", "w") as fp:
         json.dump(data, fp)
 
 
