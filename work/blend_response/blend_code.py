@@ -324,16 +324,14 @@ def make_ngmix_mbobslist(im, psf, wcs, cen1, cen2, noise, rng, nstamp=33):
 
 def make_objs(
     *, rng, blend, shear,
-    hlr=1.0, flux=1e4, psf_fhwm=0.9, wcs_scale=0.2,
-    npix=151,
-    noise=1,
+    hlr=1.0, flux=1e4, psf_fhwm=0.9, wcs_scale=0.2, npix=251, noise=1,
 ):
     if blend:
-        dx_pixels = 8
+        dx_pixels = 16
         dy_pixels = 0
     else:
-        dx_pixels = 31
-        dy_pixels = 31
+        dx_pixels = 63
+        dy_pixels = 63
 
     wcs = galsim.PixelScale(wcs_scale)
     psf = galsim.Gaussian(fwhm=psf_fhwm)
@@ -353,7 +351,7 @@ def make_objs(
     ).shear(g1=shear, g2=0).shift(dx=-dx1, dy=-dy).withFlux(flux)
     obj2 = galsim.Exponential(
         half_light_radius=hlr
-    ).shift(dx=+dx2, dy=0).withFlux(flux)
+    ).shift(dx=0, dy=0).withFlux(flux)
 
     im = galsim.Convolve(obj1 + obj2, psf).drawImage(wcs=wcs, nx=npix, ny=npix).array
     im += rng.normal(size=im.shape) * noise
