@@ -1,0 +1,24 @@
+name: des-y6-desdm
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python==3.8
+  - matplotlib
+  - esutil
+  - astropy
+  - python-dateutil
+  - fitsio
+  - ipython
+  - scipy
+  - numpy
+  - pip
+  - psutil
+  - cx_oracle
+  - pip:
+      - git+https://github.com/DarkEnergySurvey/despyServiceAccess.git
+      - git+https://github.com/DarkEnergySurvey/despymisc.git
+      - git+https://github.com/DarkEnergySurvey/despyastro.git
+      - git+https://github.com/DarkEnergySurvey/despyfitsutils.git
+      - git+https://github.com/DarkEnergySurvey/IntegrationUtils.git
+      - git+https://github.com/DarkEnergySurvey/despydb.git
