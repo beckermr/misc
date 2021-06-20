@@ -6,6 +6,7 @@ from loky import get_reusable_executor
 import ngmix
 import galsim
 import copy
+import sys
 from metadetect.detect import MEDSifier
 from ngmix.gaussmom import GaussMom
 
@@ -504,29 +505,33 @@ def meas_m(*, mask_width, n_stars, n_jobs, seed, n_print=500):
     pres = []
     mres = []
     n_done = 0
-    for fut in tqdm.tqdm(as_completed(futs), total=len(futs), ncols=79):
-        n_done += 1
-        try:
-            res = fut.result()
-            pres.append(res[0])
-            mres.append(res[1])
-        except Exception as e:
-            print(e)
+    with tqdm.tqdm(
+        as_completed(futs), total=len(futs), ncols=79, file=sys.stdout,
+    ) as itrl:
+        for fut in itrl:
+            n_done += 1
+            try:
+                res = fut.result()
+                pres.append(res[0])
+                mres.append(res[1])
+            except Exception as e:
+                print(e)
 
-        if n_done % n_print == 0:
-            m, merr, c, cerr = estimate_m_and_c(
-                pres,
-                mres,
-                0.02,
-                jackknife=200 if n_done > 1000 else None,
-            )
-            mstr = "m +/- merr: %0.6f +/- %0.6f [10^(-3), 3sigma]" % (
-                m/1e-3, 3*merr/1e-3)
-            tqdm.tqdm.write(mstr)
+            if n_done % n_print == 0:
+                m, merr, c, cerr = estimate_m_and_c(
+                    pres,
+                    mres,
+                    0.02,
+                    jackknife=200 if n_done > 1000 else None,
+                )
+                mstr = "m +/- merr: %0.6f +/- %0.6f [10^(-3), 3sigma]" % (
+                    m/1e-3, 3*merr/1e-3)
+                itrl.write(mstr, file=sys.stdout)
 
-            cstr = "c +/- cerr: %0.6f +/- %0.6f [10^(-5), 3sigma]" % (
-                c/1e-3, 3*cerr/1e-3)
-            tqdm.tqdm.write(cstr)
+                cstr = "c +/- cerr: %0.6f +/- %0.6f [10^(-5), 3sigma]" % (
+                    c/1e-3, 3*cerr/1e-3)
+                itrl.write(cstr, file=sys.stdout)
+                sys.stdout.flush()
 
     m, merr, c, cerr = estimate_m_and_c(
         pres,
