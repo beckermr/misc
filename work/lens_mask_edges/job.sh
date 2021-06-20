@@ -12,4 +12,4 @@
 source ~/.bashrc
 conda activate bebop
 
-python run.py 100
+python run.py 5000000
