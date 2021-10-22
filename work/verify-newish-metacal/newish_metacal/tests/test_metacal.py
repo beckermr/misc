@@ -142,11 +142,11 @@ def test_metacal():
     print("c: %f +/- %f [1e-5, 3-sigma]" % (c/1e-5, 3*cerr/1e-5), flush=True)
 
     assert np.abs(m) < max(5e-4, 3*merr), (m, merr)
-    assert np.abs(c) < 3.0*cerr, (c, cerr)
+    assert np.abs(c) < 4.0*cerr, (c, cerr)
 
 
 def test_metacal_slow():
-    nsims = 100
+    nsims = 1000
 
     rng = np.random.RandomState(seed=34132)
     seeds = rng.randint(size=nsims, low=1, high=2**29)
@@ -171,4 +171,4 @@ def test_metacal_slow():
     print("c: %f +/- %f [1e-5, 3-sigma]" % (c/1e-5, 3*cerr/1e-5), flush=True)
 
     assert np.abs(m) < max(5e-4, 3*merr), (m, merr)
-    assert np.abs(c) < 3.0*cerr, (c, cerr)
+    assert np.abs(c) < 4.0*cerr, (c, cerr)
