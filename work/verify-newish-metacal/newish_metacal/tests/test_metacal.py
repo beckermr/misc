@@ -8,7 +8,7 @@ from ..metacal import MetacalFitter, CONFIG
 SHEARS = ['noshear', '1p', '1m', '2p', '2m']
 
 
-def make_sim(*, seed, g1, g2):
+def make_sim(*, seed, g1, g2, s2n=1e6):
     rng = np.random.RandomState(seed=seed)
 
     gal = galsim.Exponential(half_light_radius=0.5).shear(g1=g1, g2=g2)
@@ -20,7 +20,7 @@ def make_sim(*, seed, g1, g2):
     scale = 0.263
 
     im = obj.drawImage(nx=53, ny=53, offset=dither, scale=scale).array
-    nse = np.sqrt(np.sum(im**2)) / 1e6
+    nse = np.sqrt(np.sum(im**2)) / s2n
     im += rng.normal(size=im.shape, scale=nse)
 
     psf_im = psf.drawImage(nx=53, ny=53, scale=scale).array
@@ -46,8 +46,8 @@ def make_sim(*, seed, g1, g2):
     return ngmix.observation.get_mb_obs(obs)
 
 
-def run_single_sim_pair(seed):
-    mbobs_plus = make_sim(seed=seed, g1=0.02, g2=0.0)
+def run_single_sim_pair(seed, s2n=1e6):
+    mbobs_plus = make_sim(seed=seed, g1=0.02, g2=0.0, s2n=s2n)
     rng = np.random.RandomState(seed=seed)
     ftr = MetacalFitter(CONFIG, 1, rng)
     ftr.go([mbobs_plus])
@@ -55,7 +55,7 @@ def run_single_sim_pair(seed):
     if res_p is None:
         return None
 
-    mbobs_minus = make_sim(seed=seed, g1=-0.02, g2=0.0)
+    mbobs_minus = make_sim(seed=seed, g1=-0.02, g2=0.0, s2n=s2n)
     rng = np.random.RandomState(seed=seed)
     ftr = MetacalFitter(CONFIG, 1, rng)
     ftr.go([mbobs_minus])
@@ -123,6 +123,35 @@ def test_metacal():
     seeds = rng.randint(size=nsims, low=1, high=2**29)
     jobs = [
         joblib.delayed(run_single_sim_pair)(seed)
+        for seed in seeds
+    ]
+    outputs = joblib.Parallel(n_jobs=-1, verbose=10)(jobs)
+    res_p = []
+    res_m = []
+    for res in outputs:
+        if res is not None:
+            res_p.append(res[0])
+            res_m.append(res[1])
+    res_p = np.concatenate(res_p)
+    res_m = np.concatenate(res_m)
+
+    seed = rng.randint(size=nsims, low=1, high=2**29)
+    m, merr, c, cerr = measure_m_c_bootstrap(res_p, res_m, seed, nboot=100)
+
+    print("m: %f +/- %f [1e-3, 3-sigma]" % (m/1e-3, 3*merr/1e-3), flush=True)
+    print("c: %f +/- %f [1e-5, 3-sigma]" % (c/1e-5, 3*cerr/1e-5), flush=True)
+
+    assert np.abs(m) < max(5e-4, 3*merr), (m, merr)
+    assert np.abs(c) < 3.0*cerr, (c, cerr)
+
+
+def test_metacal_slow():
+    nsims = 100
+
+    rng = np.random.RandomState(seed=34132)
+    seeds = rng.randint(size=nsims, low=1, high=2**29)
+    jobs = [
+        joblib.delayed(run_single_sim_pair)(seed, s2n=20)
         for seed in seeds
     ]
     outputs = joblib.Parallel(n_jobs=-1, verbose=10)(jobs)
