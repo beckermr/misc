@@ -26,7 +26,7 @@ def make_sim(*, seed, g1, g2, s2n=1e6):
     psf_im = psf.drawImage(nx=53, ny=53, scale=scale).array
 
     jac = ngmix.DiagonalJacobian(
-        scale=scale, row=cen+dither[0], col=cen+dither[1]
+        scale=scale, row=cen+dither[1], col=cen+dither[0]
     )
     psf_jac = ngmix.DiagonalJacobian(
         scale=scale, row=cen, col=cen
