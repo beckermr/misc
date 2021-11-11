@@ -18,5 +18,5 @@ for seed in 130 2314 34123 23431 23432 234 234321 8575 545243 563563; do
   conda activate bebop
 
   srun python test_mdet.py --seed=${seed}
-" > job_${seed}.#!/bin/sh
+" > job_${seed}.sh
 done
