@@ -425,7 +425,6 @@ def test_shear_meas(model, snr, ngrid, ntrial):
 @click.option('--ntrial', default=100_000, type=int, help='number of trials')
 def main(seed, model, s2n, ntrial):
     """Run a sim with a seed."""
-    print(s2n)
     pres, mres = _run_shear_meas(
         model,
         s2n,
