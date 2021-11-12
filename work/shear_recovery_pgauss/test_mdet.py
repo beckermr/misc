@@ -9,6 +9,7 @@ import tqdm
 import joblib
 import click
 import fitsio
+import glob
 
 import pytest
 
@@ -423,18 +424,45 @@ def test_shear_meas(model, snr, ngrid, ntrial):
 @click.option('--model', default="pgauss", type=str, help='model')
 @click.option('--s2n', default=15, type=float, help='S/N of objects')
 @click.option('--ntrial', default=100_000, type=int, help='number of trials')
-def main(seed, model, s2n, ntrial):
+@click.option('--measure-shear', help='measure shear', is_flag=True)
+def main(seed, model, s2n, ntrial, measure_shear):
     """Run a sim with a seed."""
-    pres, mres = _run_shear_meas(
-        model,
-        s2n,
-        7,
-        ntrial,
-        seed,
-    )
-    with fitsio.FITS("data_%s.fits" % seed, "rw", clobber=True) as fp:
-        fp.write_table(pres, extname="pres")
-        fp.write_table(mres, extname="mres")
+    if measure_shear:
+        fnames = glob.glob("data_*.fits")
+        pres = np.hstack([
+            fitsio.read(fname, lower=True, ext="pres")
+            for fname in fnames
+        ])
+        mres = np.hstack([
+            fitsio.read(fname, lower=True, ext="mres")
+            for fname in fnames
+        ])
+
+        m, merr, c, cerr = jackknife_m_c(pres, mres)
+
+        print(
+            (
+                "\n\nm [1e-3, 3sigma]: %s +/- %s"
+                "\nc [1e-5, 3sigma]: %s +/- %s"
+            ) % (
+                m/1e-3,
+                3*merr/1e-3,
+                c/1e-5,
+                3*cerr/1e-5,
+            ),
+            flush=True,
+        )
+    else:
+        pres, mres = _run_shear_meas(
+            model,
+            s2n,
+            7,
+            ntrial,
+            seed,
+        )
+        with fitsio.FITS("data_%s.fits" % seed, "rw", clobber=True) as fp:
+            fp.write_table(pres, extname="pres")
+            fp.write_table(mres, extname="mres")
 
 
 if __name__ == '__main__':
