@@ -430,11 +430,11 @@ def main(seed, model, s2n, ntrial, measure_shear):
     if measure_shear:
         fnames = glob.glob("data_*.fits")
         pres = np.hstack([
-            fitsio.read(fname, lower=True, ext="pres")
+            fitsio.read(fname, ext="pres")
             for fname in fnames
         ])
         mres = np.hstack([
-            fitsio.read(fname, lower=True, ext="mres")
+            fitsio.read(fname, ext="mres")
             for fname in fnames
         ])
 
@@ -442,7 +442,7 @@ def main(seed, model, s2n, ntrial, measure_shear):
 
         print(
             (
-                "\n\nm [1e-3, 3sigma]: %s +/- %s"
+                "m [1e-3, 3sigma]: %s +/- %s"
                 "\nc [1e-5, 3sigma]: %s +/- %s"
             ) % (
                 m/1e-3,
