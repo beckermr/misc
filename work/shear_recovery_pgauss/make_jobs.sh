@@ -1,6 +1,10 @@
 #!/bin/bash
 
-for seed in 130 2314 34123 23431 23432 234 234321 8575 545243 563563; do
+rm job_*.sh
+
+# 130 2314 34123 23431 23432 234 234321 8575 545243 563563
+for i in `seq 1 30`; do
+  seed=$(python -c "import numpy as np; print(np.random.randint(1, 2**31))")
   echo $seed
 
   echo "\
