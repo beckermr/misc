@@ -64,6 +64,8 @@ parsl.load(condor_config)
 
 @parsl.python_app
 def app_double(x):
+    import time
+    time.sleep(10)    
     return x*2
 
 
