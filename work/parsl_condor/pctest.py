@@ -41,19 +41,20 @@ WALLTIME = "48:00:00"
 condor_config = Config(
     executors=[
         HighThroughputExecutor(
-            worker_debug=True,
+            worker_debug=False,
             max_workers=1,
             address=address_by_hostname(),
             provider=CondorProvider(
                 cores_per_slot=1,
                 mem_per_slot=2,
                 nodes_per_block=1,
-                init_blocks=100,
-                parallelism=0.5,
+                init_blocks=1,
+                parallelism=1,
                 max_blocks=10000,
                 scheduler_options=SCHED_OPTS,
                 worker_init=WORKER_INIT,
-                walltime=WALLTIME
+                walltime=WALLTIME,
+                cmd_timeout=300,
             )
         )
     ],
@@ -65,7 +66,7 @@ parsl.load(condor_config)
 @parsl.python_app
 def app_double(x):
     import time
-    time.sleep(10)    
+    time.sleep(100)    
     return x*2
 
 
