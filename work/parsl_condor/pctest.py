@@ -49,6 +49,7 @@ condor_config = Config(
         HighThroughputExecutor(
             worker_debug=True,
             max_workers=1,
+            poll_period=1000,
             provider=CondorProvider(
                 cores_per_slot=1,
                 mem_per_slot=2,
