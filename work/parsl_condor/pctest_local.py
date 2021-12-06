@@ -52,7 +52,7 @@ condor_config = Config(
             poll_period=5000,
             provider=LocalProvider(
                 parallelism=1,
-                min_block=1,
+                min_blocks=1,
                 max_blocks=16,
                 worker_init=WORKER_INIT,
             )
