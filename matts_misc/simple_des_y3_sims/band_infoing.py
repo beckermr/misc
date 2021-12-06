@@ -58,6 +58,9 @@ def make_band_info(*, tilename, bands, output_meds_dir, n_files=None):
                 tilename,
                 band,
             )
+        prep.coadd["piff_campaign"] = None
+        if prep.coadd.sources is not None:
+            prep.coadd.sources["piff_campaign"] = None
         info = prep.coadd.get_info()
         add_extra_des_coadd_tile_info(info=info, piff_run=cfg['piff_run'])
 
