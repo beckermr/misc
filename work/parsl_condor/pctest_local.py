@@ -1,14 +1,9 @@
 import time
 import sys
 import parsl
-from parsl.providers import CondorProvider
+from parsl.providers import LocalProvider
 from parsl.config import Config
 from parsl.executors import HighThroughputExecutor
-from parsl.addresses import address_by_hostname, get_all_addresses
-
-from concurrent.futures import as_completed
-
-from parsl.configs.local_threads import config
 
 import uuid
 
@@ -55,17 +50,11 @@ condor_config = Config(
             worker_debug=True,
             max_workers=1,
             poll_period=5000,
-            provider=CondorProvider(
-                cores_per_slot=1,
-                mem_per_slot=2,
-                nodes_per_block=1,
-                init_blocks=0,
+            provider=LocalProvider(
                 parallelism=1,
-                max_blocks=10000,
-                scheduler_options=SCHED_OPTS,
+                min_block=1,
+                max_blocks=16,
                 worker_init=WORKER_INIT,
-                walltime=WALLTIME,
-                cmd_timeout=300,
             )
         )
     ],
@@ -77,7 +66,7 @@ parsl.load(condor_config)
 @parsl.python_app
 def app_double(x):
     import time
-    time.sleep(30)    
+    time.sleep(30)
     return 2*x
 
 
@@ -101,7 +90,7 @@ while n_left > 0:
             print("[%s] done?" % ID, f.done(), flush=True)
         try:
             f.result(timeout=10)
-        except:
+        except Exception:
             pass
         if n_left == 1:
             print("[%s] done?" % ID, f.done(), flush=True)
@@ -109,14 +98,21 @@ while n_left > 0:
             res.append(f.result())
             n_left -= 1
             eta = (time.time() - start) / (n_tot - n_left) * n_left
-            print("[%s - %06ds] eta|done|left:" % (ID, int(time.time() - START)), eta, n_tot - n_left, n_left, flush=True)
+            print(
+                "[%s - %06ds] eta|done|left:" % (
+                    ID, int(time.time() - START)
+                ), eta, n_tot - n_left, n_left, flush=True,
+            )
             mapped_results.pop(i)
             break
-            
+
 # for f in as_completed(mapped_results):
 #    n_left -= 1
 
-print("[%s] total:" % ID, sum(res), sum(2*x for x in range(0, int(sys.argv[1]))), flush=True)
+print(
+    "[%s] total:" % ID,
+    sum(res), sum(2*x for x in range(0, int(sys.argv[1]))), flush=True,
+)
 
 print("[%s] done w/ loop:" % ID, time.time() - start, flush=True)
 
