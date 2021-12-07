@@ -103,10 +103,11 @@ def add_extra_des_coadd_tile_info(*, info, piff_run):
         ii['psfex_path'] = ii['psf_path']
 
         # piff
-        ii['piff_path'] = get_piff_path_from_image_path(
-            image_path=ii['image_path'],
-            piff_run=piff_run,
-        )
+        if piff_run is not None:
+            ii['piff_path'] = get_piff_path_from_image_path(
+                image_path=ii['image_path'],
+                piff_run=piff_run,
+            )
 
         # image scale
         ii['scale'] = 10.0**(0.4*(MAGZP_REF - ii['magzp']))
