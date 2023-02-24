@@ -233,9 +233,9 @@ def run_sim(seed, mdet_seed, coadd, wavg, **kwargs):
 
 
 @pytest.mark.parametrize("coadd,wavg", [
+    (False, True),
     (True, False),
     (False, False),
-    (False, True),
 ])
 def test_shear_meas_simple(coadd, wavg):
     snr = 1e6
