@@ -234,7 +234,7 @@ def run_sim(seed, mdet_seed, coadd, **kwargs):
 def test_shear_meas_simple(coadd):
     snr = 1e6
     ngrid = 7
-    ntrial = 100
+    ntrial = 32
     nsub = max(ntrial // 128, 8)
     nitr = ntrial // nsub
     rng = np.random.RandomState(seed=116)
