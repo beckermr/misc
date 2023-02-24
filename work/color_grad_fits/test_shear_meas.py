@@ -210,7 +210,7 @@ def run_sim(seed, mdet_seed, coadd, wavg, **kwargs):
     mbobs_p = make_sim(seed=seed, g1=0.02, g2=0.0, **kwargs)
     cfg = copy.deepcopy(TEST_METADETECT_CONFIG)
     cfg["fitters"][0]["coadd"] = coadd
-    cfg["fitters"][0]["coadd"] = wavg
+    cfg["fitters"][0]["wavg"] = wavg
     model = "gauss"
     _pres = metadetect.do_metadetect(
         copy.deepcopy(cfg),
