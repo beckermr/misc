@@ -230,7 +230,7 @@ def run_sim(seed, mdet_seed, coadd, **kwargs):
     return _meas_shear_data(_pres, model), _meas_shear_data(_mres, model)
 
 
-@pytest.mark.parametrize("coadd", [False, True])
+@pytest.mark.parametrize("coadd", [True, False])
 def test_shear_meas_simple(coadd):
     snr = 1e6
     ngrid = 7
