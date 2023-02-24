@@ -16,7 +16,8 @@ TEST_METADETECT_CONFIG = {
             "model": "gauss",
             "weight": {"fwhm": 2.0},
             "symmetrize": False,
-            "coadd": True
+            "coadd": True,
+            "wavg": False,
         },
     ],
 
@@ -205,10 +206,11 @@ def boostrap_m_c(pres, mres):
     return m, merr, c, cerr
 
 
-def run_sim(seed, mdet_seed, coadd, **kwargs):
+def run_sim(seed, mdet_seed, coadd, wavg, **kwargs):
     mbobs_p = make_sim(seed=seed, g1=0.02, g2=0.0, **kwargs)
     cfg = copy.deepcopy(TEST_METADETECT_CONFIG)
     cfg["fitters"][0]["coadd"] = coadd
+    cfg["fitters"][0]["coadd"] = wavg
     model = "gauss"
     _pres = metadetect.do_metadetect(
         copy.deepcopy(cfg),
@@ -230,8 +232,12 @@ def run_sim(seed, mdet_seed, coadd, **kwargs):
     return _meas_shear_data(_pres, model), _meas_shear_data(_mres, model)
 
 
-@pytest.mark.parametrize("coadd", [True, False])
-def test_shear_meas_simple(coadd):
+@pytest.mark.parametrize("coadd,wavg", [
+    (True, False),
+    (False, False),
+    (False, True),
+])
+def test_shear_meas_simple(coadd, wavg):
     snr = 1e6
     ngrid = 7
     ntrial = 12
@@ -255,6 +261,7 @@ def test_shear_meas_simple(coadd):
                     seeds[loc+i],
                     mdet_seeds[loc+i],
                     coadd,
+                    wavg,
                     snr=snr,
                     ngrid=ngrid,
                 )
