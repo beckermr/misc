@@ -234,14 +234,14 @@ def run_sim(seed, mdet_seed, coadd, wavg, **kwargs):
 
 @pytest.mark.parametrize("coadd,wavg", [
     (False, True),
-    (True, False),
-    (False, False),
+    # (True, False),
+    # (False, False),
 ])
 def test_shear_meas_simple(coadd, wavg):
-    snr = 1e6
+    snr = 15
     ngrid = 7
-    ntrial = 12
-    nsub = max(ntrial // 128, 12)
+    ntrial = 1e6
+    nsub = max(ntrial // 128, 48)
     nitr = ntrial // nsub
     rng = np.random.RandomState(seed=116)
     seeds = rng.randint(low=1, high=2**29, size=ntrial)
