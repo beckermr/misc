@@ -240,8 +240,8 @@ def run_sim(seed, mdet_seed, coadd, wavg, **kwargs):
 def test_shear_meas_simple(coadd, wavg):
     snr = 20
     ngrid = 7
-    ntrial = 1_000_000
-    nsub = max(ntrial // 128, 48)
+    ntrial = ((1_000_000 // 48) + 1) * 48
+    nsub = 48
     nitr = ntrial // nsub
     rng = np.random.RandomState(seed=116)
     seeds = rng.randint(low=1, high=2**29, size=ntrial)
