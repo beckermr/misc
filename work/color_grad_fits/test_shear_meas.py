@@ -275,7 +275,6 @@ def test_shear_meas_simple():
                     else:
                         pres_jnt.append(out[0])
                         mres_jnt.append(out[1])
-                loc += nsub
 
                 m, merr, c, cerr = boostrap_m_c(
                     np.concatenate(pres_cd if coadd else pres_jnt),
@@ -299,6 +298,8 @@ def test_shear_meas_simple():
                     ),
                     flush=True,
                 )
+
+            loc += nsub
 
     total_time = time.time()-tm0
     print("time per:", total_time/ntrial, flush=True)
