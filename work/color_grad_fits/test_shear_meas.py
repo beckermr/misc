@@ -97,7 +97,7 @@ def make_sim(
             gals.append(
                 galsim.Exponential(half_light_radius=band_hlr).shift(u, v)
             )
-        gals = galsim.Add(gals)
+        gals = galsim.Add(gals) / nse_fac
         gals = gals.shear(g1=g1, g2=g2)
         gals = galsim.Convolve([gals, psf])
 
@@ -112,7 +112,7 @@ def make_sim(
                 ]).drawImage(scale=0.25).array**2)
             )
             / snr
-        ) * nse_fac
+        )
 
         im += rng.normal(size=im.shape, scale=nse)
         wgt = np.ones_like(im) / nse**2
