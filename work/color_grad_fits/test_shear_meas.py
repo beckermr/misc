@@ -7,8 +7,6 @@ import metadetect
 from esutil.pbar import PBar
 import joblib
 
-import pytest
-
 
 TEST_METADETECT_CONFIG = {
     "fitters": [
@@ -232,12 +230,7 @@ def run_sim(seed, mdet_seed, coadd, wavg, **kwargs):
     return _meas_shear_data(_pres, model), _meas_shear_data(_mres, model)
 
 
-@pytest.mark.parametrize("coadd,wavg", [
-    (False, False),
-    # (True, False),
-    (False, True),
-])
-def test_shear_meas_simple(coadd, wavg):
+def test_shear_meas_simple():
     snr = 20
     ngrid = 7
     ntrial = ((1_000_000 // 48) + 1) * 48
@@ -251,72 +244,84 @@ def test_shear_meas_simple(coadd, wavg):
 
     print("")
 
-    pres = []
-    mres = []
+    pres_jnt = []
+    mres_jnt = []
+    pres_cd = []
+    mres_cd = []
     loc = 0
     with joblib.Parallel(n_jobs=-1, verbose=100, backend='loky') as par:
         for itr in PBar(range(nitr)):
-            jobs = [
-                joblib.delayed(run_sim)(
-                    seeds[loc+i],
-                    mdet_seeds[loc+i],
-                    coadd,
-                    wavg,
-                    snr=snr,
-                    ngrid=ngrid,
+            for coadd in [True, False]:
+                jobs = [
+                    joblib.delayed(run_sim)(
+                        seeds[loc+i],
+                        mdet_seeds[loc+i],
+                        coadd,
+                        False,
+                        snr=snr,
+                        ngrid=ngrid,
+                    )
+                    for i in range(nsub)
+                ]
+                print("\n", end="", flush=True)
+                outputs = par(jobs)
+
+                for out in outputs:
+                    if out is None:
+                        continue
+                    if coadd:
+                        pres_cd.append(out[0])
+                        mres_cd.append(out[1])
+                    else:
+                        pres_jnt.append(out[0])
+                        mres_jnt.append(out[1])
+                loc += nsub
+
+                m, merr, c, cerr = boostrap_m_c(
+                    np.concatenate(pres_cd if coadd else pres_jnt),
+                    np.concatenate(mres_cd if coadd else mres_jnt),
                 )
-                for i in range(nsub)
-            ]
-            print("\n", end="", flush=True)
-            outputs = par(jobs)
-
-            for out in outputs:
-                if out is None:
-                    continue
-                pres.append(out[0])
-                mres.append(out[1])
-            loc += nsub
-
-            m, merr, c, cerr = boostrap_m_c(
-                np.concatenate(pres),
-                np.concatenate(mres),
-            )
-            print(
-                (
-                    "\n"
-                    "nsims: %d\n"
-                    "m [1e-3, 3sigma]: %s +/- %s\n"
-                    "c [1e-5, 3sigma]: %s +/- %s\n"
-                    "\n"
-                ) % (
-                    len(pres),
-                    m/1e-3,
-                    3*merr/1e-3,
-                    c/1e-5,
-                    3*cerr/1e-5,
-                ),
-                flush=True,
-            )
+                print(
+                    (
+                        "\n"
+                        "nsims: %d\n"
+                        "coadd: %r\n"
+                        "m [1e-3, 3sigma]: %s +/- %s\n"
+                        "c [1e-5, 3sigma]: %s +/- %s\n"
+                        "\n"
+                    ) % (
+                        len(pres_cd) if coadd else len(pres_jnt),
+                        coadd,
+                        m/1e-3,
+                        3*merr/1e-3,
+                        c/1e-5,
+                        3*cerr/1e-5,
+                    ),
+                    flush=True,
+                )
 
     total_time = time.time()-tm0
     print("time per:", total_time/ntrial, flush=True)
 
-    pres = np.concatenate(pres)
-    mres = np.concatenate(mres)
-    m, merr, c, cerr = boostrap_m_c(pres, mres)
+    for coadd in [True, False]:
+        pres = np.concatenate(pres_cd if coadd else pres_jnt)
+        mres = np.concatenate(mres_cd if coadd else mres_jnt)
+        m, merr, c, cerr = boostrap_m_c(pres, mres)
 
-    print(
-        (
-            "m [1e-3, 3sigma]: %s +/- %s"
-            "\nc [1e-5, 3sigma]: %s +/- %s"
-        ) % (
-            m/1e-3,
-            3*merr/1e-3,
-            c/1e-5,
-            3*cerr/1e-5,
-        ),
-        flush=True,
-    )
+        print(
+            (
+                "coadd: %r\n"
+                "m [1e-3, 3sigma]: %s +/- %s"
+                "\nc [1e-5, 3sigma]: %s +/- %s"
+            ) % (
+                coadd,
+                m/1e-3,
+                3*merr/1e-3,
+                c/1e-5,
+                3*cerr/1e-5,
+            ),
+            flush=True,
+        )
 
-    assert np.abs(m) < max(1e-3, 3*merr)
-    assert np.abs(c) < 3*cerr
+        assert np.abs(m) < max(1e-3, 3*merr)
+        assert np.abs(c) < 3*cerr
