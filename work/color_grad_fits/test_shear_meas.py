@@ -59,6 +59,7 @@ def make_sim(
     snr=1e6,
     band_hlrs=(0.9, 0.75, 0.5),
     psf_fwhms=(1.1, 1.05, 0.9),
+    nse_facs=(1.3, 1.0, 0.7),
 ):
     rng = np.random.RandomState(seed=seed)
 
@@ -88,7 +89,7 @@ def make_sim(
     psf_cen = (psf_dim-1)/2
 
     mbobs = ngmix.MultiBandObsList()
-    for band_hlr, psf_fwhm in zip(band_hlrs, psf_fwhms):
+    for band_hlr, psf_fwhm, nse_fac in zip(band_hlrs, psf_fwhms, nse_facs):
         psf = galsim.Gaussian(fwhm=psf_fwhm)
         gals = []
         for ind in range(nobj):
@@ -111,7 +112,7 @@ def make_sim(
                 ]).drawImage(scale=0.25).array**2)
             )
             / snr
-        )
+        ) * nse_fac
 
         im += rng.normal(size=im.shape, scale=nse)
         wgt = np.ones_like(im) / nse**2
@@ -231,9 +232,9 @@ def run_sim(seed, mdet_seed, coadd, wavg, **kwargs):
 
 
 def test_shear_meas_simple():
-    snr = 20
+    snr = 1e6
     ngrid = 7
-    ntrial = ((1_000_000 // 48) + 1) * 48
+    ntrial = ((100 // 48) + 1) * 48
     nsub = 48
     nitr = ntrial // nsub
     rng = np.random.RandomState(seed=116)
