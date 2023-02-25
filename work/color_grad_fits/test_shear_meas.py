@@ -245,20 +245,29 @@ def test_shear_meas_simple():
 
     print("")
 
-    pres_jnt = []
-    mres_jnt = []
-    pres_cd = []
-    mres_cd = []
+    combs = [
+        (False, True),
+        (False, False),
+        (True, False),
+    ]
+
+    pres = {}
+    mres = {}
+    for cmb in combs:
+        pres[cmb] = []
+        mres[cmb] = []
+
     loc = 0
     with joblib.Parallel(n_jobs=-1, verbose=100, backend='loky') as par:
         for itr in PBar(range(nitr)):
-            for coadd in [True, False]:
+            for cmb in combs:
+                coadd, wavg = cmb
                 jobs = [
                     joblib.delayed(run_sim)(
                         seeds[loc+i],
                         mdet_seeds[loc+i],
                         coadd,
-                        False,
+                        wavg,
                         snr=snr,
                         ngrid=ngrid,
                     )
@@ -270,28 +279,25 @@ def test_shear_meas_simple():
                 for out in outputs:
                     if out is None:
                         continue
-                    if coadd:
-                        pres_cd.append(out[0])
-                        mres_cd.append(out[1])
-                    else:
-                        pres_jnt.append(out[0])
-                        mres_jnt.append(out[1])
+                    pres[cmb].append(out[0])
+                    mres[cmb].append(out[1])
 
                 m, merr, c, cerr = boostrap_m_c(
-                    np.concatenate(pres_cd if coadd else pres_jnt),
-                    np.concatenate(mres_cd if coadd else mres_jnt),
+                    np.concatenate(pres[cmb]),
+                    np.concatenate(mres[cmb]),
                 )
                 print(
                     (
                         "\n"
                         "nsims: %d\n"
-                        "coadd: %r\n"
+                        "coadd|wavg: %r|%r\n"
                         "m [1e-3, 3sigma]: %s +/- %s\n"
                         "c [1e-5, 3sigma]: %s +/- %s\n"
                         "\n"
                     ) % (
-                        len(pres_cd) if coadd else len(pres_jnt),
+                        len(pres[cmb]),
                         coadd,
+                        wavg,
                         m/1e-3,
                         3*merr/1e-3,
                         c/1e-5,
@@ -305,18 +311,20 @@ def test_shear_meas_simple():
     total_time = time.time()-tm0
     print("time per:", total_time/ntrial, flush=True)
 
-    for coadd in [True, False]:
-        pres = np.concatenate(pres_cd if coadd else pres_jnt)
-        mres = np.concatenate(mres_cd if coadd else mres_jnt)
-        m, merr, c, cerr = boostrap_m_c(pres, mres)
+    for cmb in combs:
+        coadd, wavg = cmb
+        _pres = np.concatenate(pres[cmb])
+        _mres = np.concatenate(mres[cmb])
+        m, merr, c, cerr = boostrap_m_c(_pres, _mres)
 
         print(
             (
-                "coadd: %r\n"
+                "coadd: %r|%r\n"
                 "m [1e-3, 3sigma]: %s +/- %s"
                 "\nc [1e-5, 3sigma]: %s +/- %s"
             ) % (
                 coadd,
+                wavg,
                 m/1e-3,
                 3*merr/1e-3,
                 c/1e-5,
