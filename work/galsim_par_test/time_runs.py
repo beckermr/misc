@@ -1,6 +1,5 @@
 import subprocess
 import time
-import os
 
 
 try:
@@ -14,4 +13,8 @@ try:
         t0 = time.time() - t0
         print(nproc, t0)
 finally:
-    os.system("rm -f multi_image_mod_*.fits", shell=True)
+    subprocess.run(
+        "rm -f multi_image_mod_*.fits",
+        shell=True,
+        capture_output=True,
+    )
