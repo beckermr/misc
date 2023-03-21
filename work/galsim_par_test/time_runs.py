@@ -3,6 +3,12 @@ import time
 
 
 try:
+    subprocess.run(
+        "rm -f multi_image_mod_*.fits",
+        shell=True,
+        capture_output=True,
+    )
+
     for nproc in [2, 4, 8]:
         t0 = time.time()
         subprocess.run(
