@@ -6,10 +6,10 @@ import uuid
 
 class MultiImageModBuilder(OutputBuilder):
     def setup(self, config, base, file_num, logger):
-        pass
+        self.num_to_do = int(config.get("num_to_do", 16))
 
     def getNFiles(self, config, base, logger=None):
-        return 256
+        return self.num_to_do
 
     def getFilename(self, config, base, logger):
         uid = uuid.uuid4().hex[0:8]

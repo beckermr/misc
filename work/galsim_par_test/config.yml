@@ -18,3 +18,4 @@ gal:
 
 output:
   type: MultiImageMod
+  num_to_do: 16
