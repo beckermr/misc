@@ -5,6 +5,7 @@ import glob
 
 try:
     for nproc in [2, 4, 8]:
+        print("timing %d processes..." % nproc, flush=True)
         subprocess.run(
             "rm -f multi_image_mod_*.fits",
             shell=True,
@@ -19,10 +20,10 @@ try:
             check=True,
         )
         t0 = time.time() - t0
-        print(nproc, t0)
+        print(nproc, t0, flush=True)
 
-        fnames = glob.glob("multi_image_mod_*.fits")
-        assert fnames == 16, fnames
+        lfnames = len(glob.glob("multi_image_mod_*.fits"))
+        assert lfnames == 16, lfnames
 finally:
     subprocess.run(
         "rm -f multi_image_mod_*.fits",
