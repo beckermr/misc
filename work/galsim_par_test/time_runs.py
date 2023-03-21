@@ -9,7 +9,7 @@ else:
     nfiles = 128
 
 try:
-    for nproc in [1, 2, 4, 8]:
+    for nproc in [128, 128, 64, 32, 16, 8, 4, 2]:
         print("timing %d processes..." % nproc, flush=True)
         subprocess.run(
             "rm -f multi_image_mod_*.fits",

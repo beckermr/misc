@@ -3,7 +3,7 @@ modules:
 
 image:
   type: Scattered
-  nobjects: 200
+  nobjects: 1000
   xsize: 2048
   ysize: 4096
 
