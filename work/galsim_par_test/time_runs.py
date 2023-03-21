@@ -20,7 +20,8 @@ try:
         t0 = time.time() - t0
         print(nproc, t0)
 
-    assert len(glob.glob("multi_image_mod_*.fits")) == 16
+    fnames = len(glob.glob("multi_image_mod_*.fits"))
+    assert fnames == 16, fnames
 finally:
     subprocess.run(
         "rm -f multi_image_mod_*.fits",
