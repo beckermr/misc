@@ -29,7 +29,7 @@ try:
         print(nproc, t0, flush=True)
 
         lfnames = len(glob.glob("multi_image_mod_*.fits"))
-        assert lfnames == 16, lfnames
+        assert lfnames == nfiles, lfnames
 finally:
     subprocess.run(
         "rm -f multi_image_mod_*.fits",
