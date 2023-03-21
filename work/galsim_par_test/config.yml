@@ -3,7 +3,7 @@ modules:
 
 image:
   type: Scattered
-  nobjects: 1000
+  nobjects: 200
   xsize: 2048
   ysize: 4096
 
@@ -21,4 +21,4 @@ gal:
 
 output:
   type: MultiImageMod
-  num_to_do: 16
+  nfiles: 16
