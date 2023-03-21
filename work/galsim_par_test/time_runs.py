@@ -1,7 +1,12 @@
 import subprocess
 import time
 import glob
+import sys
 
+if len(sys.argv) > 1:
+    nfiles = int(sys.argv[1])
+else:
+    nfiles = 128
 
 try:
     for nproc in [1, 2, 4, 8]:
@@ -14,7 +19,8 @@ try:
 
         t0 = time.time()
         subprocess.run(
-            "galsim config.yml output.nproc=%d" % nproc,
+            "galsim config.yml "
+            "output.nproc=%d output.nfiles=%d" % (nproc, nfiles),
             shell=True,
             capture_output=True,
             check=True,

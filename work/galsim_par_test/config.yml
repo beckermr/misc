@@ -21,4 +21,3 @@ gal:
 
 output:
   type: MultiImageMod
-  nfiles: 16
