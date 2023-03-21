@@ -4,7 +4,7 @@ import glob
 
 
 try:
-    for nproc in [2, 4, 8]:
+    for nproc in [1, 2, 4, 8]:
         print("timing %d processes..." % nproc, flush=True)
         subprocess.run(
             "rm -f multi_image_mod_*.fits",
