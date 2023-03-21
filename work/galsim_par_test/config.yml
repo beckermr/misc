@@ -1,0 +1,20 @@
+modules:
+  - multi_image_mod
+
+image:
+  type: Scattered
+  nobjects: 10
+  xsize: 2048
+  ysize: 4096
+
+psf:
+  type: Gaussian
+  fwhm: 0.9
+
+gal:
+  type: Exponential
+  half_light_radius: 0.5
+  flux: 1000.0
+
+output:
+  type: MultiImageMod
