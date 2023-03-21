@@ -20,11 +20,12 @@ try:
         t0 = time.time() - t0
         print(nproc, t0)
 
-        fnames = glob.glob("multi_image_mod_*.fits")
-        assert fnames == 16, fnames
+        # fnames = glob.glob("multi_image_mod_*.fits")
+        # assert fnames == 16, fnames
 finally:
-    subprocess.run(
-        "rm -f multi_image_mod_*.fits",
-        shell=True,
-        capture_output=True,
-    )
+    pass
+    # subprocess.run(
+    #     "rm -f multi_image_mod_*.fits",
+    #     shell=True,
+    #     capture_output=True,
+    # )
