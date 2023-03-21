@@ -15,6 +15,7 @@ class MultiImageModBuilder(OutputBuilder):
     def buildImages(
         self, config, base, file_num, image_num, obj_num, ignore, logger
     ):
+        ignore += ["num_to_do"]
         images = OutputBuilder.buildImages(
             self, config, base, file_num, image_num, obj_num, ignore, logger)
         return images
