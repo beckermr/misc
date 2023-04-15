@@ -27,6 +27,10 @@ import hpgeom
 import numba
 
 
+CALSPEC_RA = 3.0 + (32/60 + 32.88/3600)
+CALSPEC_DEC = -1.0 * (27 + 51/60 + 48/3600)
+
+
 def gen_fake_data(
     *, edata, nside, seed,
     focal_plane_radius=1.0,
@@ -137,11 +141,10 @@ def gen_fake_data(
     """  # noqa
     rng = np.random.RandomState(seed=seed)
 
-    period = 365*3
     night = (edata["mjd_obs"] + 0.5).astype(int)
     night = night - np.min(night) + 100
     year = night // period
-    night_in_year = (night % period)/period
+    night_in_year = (night % period) / 1e3
     uyear, inv_uyear = np.unique(year, return_inverse=True)
     unight, inv_unight = np.unique(night, return_inverse=True)
 
@@ -160,7 +163,7 @@ def gen_fake_data(
         low=tel_eff_mean - width/2,
         high=tel_eff_mean + width/2,
         size=uyear.shape,
-    ) * 365.0
+    ) * 1e3
 
     rho_night_fac = np.sqrt(1.0 - rho_night)
     sqrt_rho_night = np.sqrt(rho_night)
@@ -187,7 +190,6 @@ def gen_fake_data(
     if target_nstar is not None:
         err_fac = np.sqrt(star_ra.shape[0]/target_nstar)
         star_nse_std *= err_fac
-        sstar_nse_std *= err_fac
 
     _, ied, istar, _ = edmatch.query_radius(
         star_ra, star_dec, focal_plane_radius, return_indices=True
@@ -205,7 +207,10 @@ def gen_fake_data(
     )
     star_obs_err = np.ones_like(star_obs) * star_nse_std
 
-    isstar = rng.choice(len(star_ra))
+    # find the star closest to the calspec star
+    _mtch = smatch.Matcher(star_ra, star_dec)
+    _idx = _mtch.query_knn([CALSPEC_RA], [CALSPEC_DEC])
+    isstar = _idx[0]
     star_obs = np.concatenate(
         [
             star_obs,
@@ -307,7 +312,7 @@ def gen_guess(opt_kwargs, eps=1e-4, rng=None):
         + opt_kwargs["nstar"]
     )
     g = rng.normal(scale=eps, size=nump)
-    g[0:opt_kwargs["nyear"]] = -1.5e-4 * (1.0 + g[0:opt_kwargs["nyear"]]) * 365
+    g[0:opt_kwargs["nyear"]] = -1.5e-4 * (1.0 + g[0:opt_kwargs["nyear"]]) * 1e3
     return g
 
 
