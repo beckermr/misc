@@ -242,6 +242,7 @@ def gen_fake_data(
             "tel_eff_std": tel_eff_std,
             "period": period,
             "focal_plane_radius": focal_plane_radius,
+            "target_nstar": target_nstar,
         },
         "data": {
             "night": night,
@@ -264,6 +265,8 @@ def gen_fake_data(
             "star_obs": star_obs,
             "star_obs_err": star_obs_err,
             "rho_night": rho_night,
+            "exp_ra": edata["ra"].copy(),
+            "exp_dec": edata["dec"].copy(),
         }
     }
     data["opt_kwargs"] = dict(
