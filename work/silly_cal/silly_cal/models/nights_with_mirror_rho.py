@@ -5,12 +5,14 @@ This module models a survey zero point as a sum of three terms
         sqrt(rho) * zp_night
         + sqrt(1-rho) * zp_noise
         + tel_eff * (time since last cleaning)
+        + c
 
 The model is that there is a correlated zp for the night
 and some random noise for each exposure. The correlation
 coefficient is rho. These terms get added onto a background
 of a slowly changing overall efficiency since the last time
-the system was cleaned.
+the system was cleaned. Finally, there is a global calibration
+factor c.
 
 To use this code, you do the following
 
@@ -38,6 +40,7 @@ def gen_fake_data(
     zp_std=0.0327,
     tel_eff_mean=-1.51e-4,
     tel_eff_std=5e-6,
+    global_cal=0,
     star_nse_std=0.1,
     sstar_nse_std=2e-3,
     target_nstar=None,
@@ -52,12 +55,14 @@ def gen_fake_data(
             sqrt(rho) * zp_night
             + sqrt(1-rho) * zp_noise
             + tel_eff * (time since last cleaning)
+            + c
 
     The model is that there is a correlated zp for the night
     and some random noise for each exposure. The correlation
     coefficient is rho. These terms get added onto a background
     of a slowly changing overall efficiency since the last time
-    the system was cleaned.
+    the system was cleaned.  Finally, there is a global calibration
+    factor c.
 
     This function generates observations of the stars on a healpix
     grid of nside. It randomly picks on of those stars to be the
@@ -92,6 +97,8 @@ def gen_fake_data(
     tel_eff_std : float, optional
         The scatter in the telescope efficiency in mags per day. I invented the
         default of 5e-6.
+    global_cal : float, optional
+        The global calibration factor. Default is zero.
     star_nse_std : float, optional
         The observational noise on each star. The default of 0.1 is roughly S/N of
         10.
@@ -172,6 +179,7 @@ def gen_fake_data(
         sqrt_rho_night * true_zp_night[inv_unight]
         + rho_night_fac * true_zp_nse
         + true_tel_eff[inv_uyear] * night_in_year
+        + global_cal
     )
 
     edmatch = smatch.Matcher(edata["ra"], edata["dec"])
@@ -243,6 +251,7 @@ def gen_fake_data(
             "period": period,
             "focal_plane_radius": focal_plane_radius,
             "target_nstar": target_nstar,
+            "global_cal": global_cal,
         },
         "data": {
             "night": night,
@@ -308,7 +317,7 @@ def gen_guess(opt_kwargs, eps=1e-4, rng=None):
         rng = np.random.RandomState(seed=rng)
 
     nump = (
-        1
+        2
         + opt_kwargs["nyear"]
         + opt_kwargs["nnight"]
         + opt_kwargs["nexp"]
@@ -316,12 +325,46 @@ def gen_guess(opt_kwargs, eps=1e-4, rng=None):
     )
     g = rng.normal(scale=eps, size=nump)
     g[0] = 0.8
-    g[1:1+opt_kwargs["nyear"]] = (
+    g[2:2+opt_kwargs["nyear"]] = (
         -1.5e-4
         * (1.0 + g[1:1+opt_kwargs["nyear"]])
         * 1e3
     )
     return g
+
+
+def zero_to_sstar(
+    pars,
+    *, nyear, nnight, nexp, nstar,
+    inv_uyear,
+    inv_unight,
+    istar, ied, isstar,
+    night_in_year,
+    star_obs, star_obs_err,
+):
+    """Zero the solution to match the standard star."""
+    true_star = pars[2+nyear+nnight+nexp:]
+    true_sstar = true_star[isstar]
+    pars[1] += true_sstar
+    pars[2+nyear+nnight+nexp:] -= true_sstar
+    return pars
+
+
+def zero_to_survey(
+    pars,
+    *, nyear, nnight, nexp, nstar,
+    inv_uyear,
+    inv_unight,
+    istar, ied, isstar,
+    night_in_year,
+    star_obs, star_obs_err,
+):
+    """Zero the solution to match the standard star."""
+    true_star = pars[2+nyear+nnight+nexp:]
+    true_mn = np.mean(true_star)
+    pars[1] += true_mn
+    pars[2+nyear+nnight+nexp:] -= true_mn
+    return pars
 
 
 @numba.njit(parallel=True, fastmath=True, nogil=True)
@@ -362,10 +405,11 @@ def value_and_grad(
     nobs = star_obs.shape[0]
 
     rho_night = pars[0]
-    tel_eff = pars[1:1+nyear]
-    zp_night = pars[1+nyear:1+nyear+nnight]
-    zp_exp = pars[1+nyear+nnight:1+nyear+nnight+nexp]
-    true_star = pars[1+nyear+nnight+nexp:]
+    global_cal = pars[1]
+    tel_eff = pars[2:2+nyear]
+    zp_night = pars[2+nyear:2+nyear+nnight]
+    zp_exp = pars[2+nyear+nnight:2+nyear+nnight+nexp]
+    true_star = pars[2+nyear+nnight+nexp:]
 
     rho_night_fac = np.sqrt(1.0 - rho_night)
     sqrt_rho_night = np.sqrt(rho_night)
@@ -382,6 +426,7 @@ def value_and_grad(
             sqrt_rho_night * zp_night[_inight]
             + rho_night_fac * zp_exp[_ied]
             + night_in_year[_ied] * tel_eff[_iyear]
+            + global_cal
         )
         pred_star = true_star[_istar] + pred_zp
 
@@ -394,10 +439,11 @@ def value_and_grad(
             zp_night[_inight] / sqrt_rho_night
             - zp_exp[_ied] / rho_night_fac
         )
-        mygrads[tid, 1 + _iyear] += efac * night_in_year[_ied]
-        mygrads[tid, 1 + nyear + _inight] += efac * sqrt_rho_night
-        mygrads[tid, 1 + nyear + nnight + _ied] += efac * rho_night_fac
-        mygrads[tid, 1 + nyear + nnight + nexp + _istar] += efac
+        mygrads[tid, 1] += efac
+        mygrads[tid, 2 + _iyear] += efac * night_in_year[_ied]
+        mygrads[tid, 2 + nyear + _inight] += efac * sqrt_rho_night
+        mygrads[tid, 2 + nyear + nnight + _ied] += efac * rho_night_fac
+        mygrads[tid, 2 + nyear + nnight + nexp + _istar] += efac
 
     for i in range(nt):
         grad += mygrads[i]
@@ -407,6 +453,6 @@ def value_and_grad(
     chi = (star_obs[i] - pred_star) / star_obs_err[i]
     chi2 += (chi*chi)
     efac = -2.0 * chi / star_obs_err[i] / nobs
-    grad[1 + nyear + nnight + nexp + isstar] += efac
+    grad[2 + nyear + nnight + nexp + isstar] += efac
 
     return chi2/nobs, grad
