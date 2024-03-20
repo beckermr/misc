@@ -116,3 +116,5 @@ venv.bak/
 *.oe
 *.DS_Store
 *.npz
+*.gif
+*.mp4
