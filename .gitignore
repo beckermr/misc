@@ -118,3 +118,5 @@ venv.bak/
 *.npz
 *.gif
 *.mp4
+*.pem
+*.cert
