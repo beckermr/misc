@@ -99,6 +99,15 @@ def plot_years_and_seasons(ax, start_time, n_years):
     season_left = YEAR - phase_0
     season_right = 2 * YEAR - phase_360
 
+    i = -2
+    ax.plot(
+        [0, 360],
+        [(YEAR * i + season_left + start_time - MJD_2024) / YEAR + 2024,
+         (YEAR * i + season_right + start_time - MJD_2024) / YEAR + 2024],
+        color="gray",
+        linestyle="dashed",
+    )
+
     i = -1
     ax.plot(
         [0, 360],
@@ -110,22 +119,134 @@ def plot_years_and_seasons(ax, start_time, n_years):
 
     for i in range(n_years):
         yloc = (start_time - MJD_2024) / YEAR + i + 2024
-        ax.axhline(yloc, color="gray", linestyle="dotted")
-        ax.plot(
+        my = ax.axhline(yloc, color="gray", linestyle="dotted", label="years")
+        ms = ax.plot(
             [0, 360],
             [(YEAR * i + season_left + start_time - MJD_2024) / YEAR + 2024,
              (YEAR * i + season_right + start_time - MJD_2024) / YEAR + 2024],
             color="gray",
             linestyle="dashed",
+            label="seasons",
         )
+        ax.plot([sun_ra_start + 90] * 2, [yloc, yloc + 1], color="gray", linestyle="dashed")
 
         ax.text(5.0, yloc + 0.9, "Y%d" % (i+1), ha="left", va="top")
     ax.axhline(
         (start_time + n_years * YEAR - MJD_2024) / YEAR + 2024,
         color="gray",
-        linestyle="dashed",
+        linestyle="dotted",
     )
-    ax.axvline(sun_ra_start + 90, color="gray", linestyle="dashed")
+    # ax.axvline(sun_ra_start + 90, color="gray", linestyle="dashed")
+
+    return [ms, my]
+
+
+
+def plot_sun_ra(ax, start_time, n_years, **kwargs):
+    # old code
+    # m = None
+    # sun_ras = np.array([get_sun_ra_at_mjd(mjd) for mjd in mjds])
+    # loc = 0
+    # ra_curr = [sun_ras[loc]]
+    # mjd_curr = [mjds[loc]]
+    # while loc < len(sun_ras)-1:
+    #     if sun_ras[loc + 1] < sun_ras[loc]:
+    #         m = ax.plot(
+    #             np.array(ra_curr),
+    #             (np.array(mjd_curr) - MJD_2024) / YEAR + 2024,
+    #             **kwargs,
+    #         )
+    #         ra_curr = [sun_ras[loc + 1]]
+    #         mjd_curr = [mjds[loc + 1]]
+    #     else:
+    #         ra_curr.append(sun_ras[loc + 1])
+    #         mjd_curr.append(mjds[loc + 1])
+
+    #     loc += 1
+
+    # new code
+    # sun_ra_start = get_sun_ra_at_mjd(start_time)
+
+    phase_0 = get_phase_for_ra_in_mjd(0, start_time)
+    phase_360 = get_phase_for_ra_in_mjd(360, start_time)
+
+    season_left = YEAR - phase_0
+    season_right = 2 * YEAR - phase_360
+
+    i = -2
+    m = ax.plot(
+        [0, 360],
+        [(YEAR * i + season_left + start_time - MJD_2024) / YEAR + 2024 + 0.25,
+        (YEAR * i + season_right + start_time - MJD_2024) / YEAR + 2024 + 0.25],
+        **kwargs,
+    )
+
+    i = -1
+    m = ax.plot(
+        [0, 360],
+        [(YEAR * i + season_left + start_time - MJD_2024) / YEAR + 2024 + 0.25,
+        (YEAR * i + season_right + start_time - MJD_2024) / YEAR + 2024 + 0.25],
+        **kwargs,
+    )
+
+    for i in range(n_years-1):
+        ax.plot(
+            [0, 360],
+            [(YEAR * i + season_left + start_time - MJD_2024) / YEAR + 2024 + 0.25,
+            (YEAR * i + season_right + start_time - MJD_2024) / YEAR + 2024 + 0.25],
+            **kwargs,
+        )
+
+    return [m,]
+
+
+def get_cmap_plus_white(cmap="marine"):
+    import proplot as pplt
+
+    cmap = pplt.constructor.Colormap(
+        cmap,
+        right=0.9,
+        left=0.1,
+    )
+
+    cmap = pplt.constructor.Colormap(
+        [(1, 1, 1, 1)] + [
+            cmap(x)
+            for x in np.linspace(0, 1, 999)
+        ]
+    )
+
+    return cmap
+
+
+def plot_rizexptime_fancy(ax, rizexptime_map, scale_factor, vmin=0, vmax=10, npix=800, cmap=None):
+    import skyproj
+    import skyproj.hpx_utils
+
+    imap = rizexptime_map.copy()
+    imap = imap / scale_factor
+
+    lon, lat, xymap = skyproj.hpx_utils.hpxmap_to_xy(
+        imap,
+        [0, 360],
+        [-90, 90],
+        xsize=npix,
+    )
+
+    if cmap is None:
+        cmap = get_cmap_plus_white(cmap="marine")
+    elif isinstance(cmap, str):
+        cmap = get_cmap_plus_white(cmap=cmap)
+
+    m = ax.pcolormesh(
+        lon, lat, xymap,
+        cmap=cmap,
+        vmin=vmin,
+        vmax=vmax,
+        discrete=False,
+    )
+    ax.invert_xaxis()
+    return m
 
 
 def make_default_healpix_footprints(nside=32):
@@ -287,3 +408,31 @@ def make_footprint_gif(
             2.0 * (3/10 * images_per_year)
         )),
     )
+
+
+def mad(x, axis=None, no_scale=False):
+    """
+    median absolute deviation - scaled like a standard deviation
+
+        mad = 1.4826*median(|x-median(x)|)
+
+    Parameters
+    ----------
+    x: array-like
+        array to take MAD of
+    axis: int
+        axis over which to take mode (default: None)
+    no_scale: bool
+        return MAD not scaled to match a Gaussian (default: False)
+
+    Returns
+    -------
+    mad: float
+        MAD of array x
+    """
+    kd = True if axis is not None else False
+    mad = np.median(np.abs(x - np.median(x, axis=axis, keepdims=kd)), axis=axis)
+    if no_scale:
+        return mad
+    else:
+        return 1.4826 * mad
