@@ -7,7 +7,7 @@ from astropy.time import Time
 from astropy.coordinates import get_sun
 from astropy.coordinates import EarthLocation
 
-RUBIN_LOC = EarthLocation.of_site("Cerro Pachon")
+RUBIN_LOC = EarthLocation.of_site("Rubin", refresh_cache=True)
 
 MJD_2024 = Time(
     "2024-01-01T00:00:00.00",
@@ -25,17 +25,24 @@ def get_sun_ra_at_mjd(mjd):
     return get_sun(t).ra.deg
 
 
-def get_phase_for_ra_in_mjd(ra, start_time):
+def get_phase_for_ra_in_mjd(ra, start_time, phase_shift_quarter_years=1):
     sun_ra_start = get_sun_ra_at_mjd(start_time)
+    ps = phase_shift_quarter_years * np.pi / 2.0
     return (
-        ((sun_ra_start - ra) / 180 * np.pi + np.pi / 2) % (2.0 * np.pi)
+        ((sun_ra_start - ra) / 180 * np.pi + ps) % (2.0 * np.pi)
         * (YEAR / 2.0 / np.pi)
     )
 
 
-def get_season(mjd, ra, start_time):
-    phase = get_phase_for_ra_in_mjd(ra, start_time)
+def get_season(mjd, ra, start_time, phase_shift_quarter_years=1):
+    phase = get_phase_for_ra_in_mjd(ra, start_time, phase_shift_quarter_years=phase_shift_quarter_years)
     return (mjd - start_time + phase) / YEAR
+    # phase = get_phase_for_ra_in_mjd(ra, start_time, phase_shift_quarter_years=1)
+    # _season = (mjd - start_time + phase) / YEAR  - 1
+    # if maf_season:
+    #     return _season
+    # else:
+    #     return _season + 0.25 * 360 / YEAR
 
 
 def get_cuml_desired_obs(mjd_in, ra, start_time, rise, verbose=False):
