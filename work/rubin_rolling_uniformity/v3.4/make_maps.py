@@ -169,6 +169,15 @@ def main():
             )
         )
     )
+    sims = [
+        "roll_uniform_early_half_mjdp0_v3.4_10yrs.db",
+        "baseline_v3.4_10yrs.db",
+        "noroll_mjdp0_v3.4_10yrs.db",
+    ]
+    fnames = [
+        fname for fname in fnames
+        if any(fname.endswith(sim) for sim in sims)
+    ]
     jobs = [
         joblib.delayed(_process_file)(fname)
         for fname in fnames
