@@ -13,7 +13,7 @@ from admom_core import (
     shearpars_to_mompars,
     AdMomData,
     Obs,
-    LOW_DET_VAL
+    LOW_DET_VAL,
 )
 
 
@@ -31,7 +31,9 @@ def _admom_kern_inner_loop(mompars, obs, flags, admom_data, cenonly):
         admom_data.flags,
     )
 
-    cen_v, cen_u, raw_irr, raw_irc, raw_icc, flux = compute_moments_admom_obs(mompars, obs)
+    cen_v, cen_u, raw_irr, raw_irc, raw_icc, flux = compute_moments_admom_obs(
+        mompars, obs
+    )
 
     # set flags is flux is non-positive
     flags = jax.lax.cond(
@@ -56,14 +58,16 @@ def _admom_kern_inner_loop(mompars, obs, flags, admom_data, cenonly):
         irc = raw_irc
         icc = raw_icc
 
-    obs_moms = jnp.array([
-        cen_v,
-        cen_u,
-        irr,
-        irc,
-        icc,
-        flux,
-    ])
+    obs_moms = jnp.array(
+        [
+            cen_v,
+            cen_u,
+            irr,
+            irc,
+            icc,
+            flux,
+        ]
+    )
 
     return obs_moms, flags, raw_irr, raw_irc, raw_icc
 
@@ -81,7 +85,9 @@ def _admom_kern(i, args, cenonly, n_obs):
     icc = 0.0
     for i in range(n_obs):
         obs = admom_data.obs[i]
-        obs_moms, _flags, _irr, _irc, _icc = _admom_kern_inner_loop(mompars, obs, flags, admom_data, cenonly)
+        obs_moms, _flags, _irr, _irc, _icc = _admom_kern_inner_loop(
+            mompars, obs, flags, admom_data, cenonly
+        )
         tot_moms = tot_moms + obs_moms[0:5] * obs.wgt
         tot_wgt = tot_wgt + obs.wgt
         fluxes = fluxes.at[i].set(obs_moms[5])
@@ -130,9 +136,7 @@ def _admom_kern(i, args, cenonly, n_obs):
     )
     cond = jax.numpy.logical_or(
         new_converged,
-        jax.numpy.logical_or(
-            flags != 0, admom_data.converged
-        ),
+        jax.numpy.logical_or(flags != 0, admom_data.converged),
     )
     curr_mompars = jax.lax.cond(
         cond,
