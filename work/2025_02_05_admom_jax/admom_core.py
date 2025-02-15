@@ -162,44 +162,54 @@ def _eval_gauss2d(pars, u, v, area):
 
 
 def deweight_moments(wrr, wrc, wcc, irr, irc, icc, flags):
-    detm = irr * icc - irc * irc
-    flags = jax.lax.cond(
-        detm <= LOW_DET_VAL,
-        lambda x: x | 2**4,
-        lambda x: x,
-        flags,
-    )
+    if True:
+        detm = irr * icc - irc * irc
+        flags = jax.lax.cond(
+            detm <= LOW_DET_VAL,
+            lambda x: x | 2**4,
+            lambda x: x,
+            flags,
+        )
+        return 2*irr, 2*irc, 2*icc, flags
+    else:
+        detm = irr * icc - irc * irc
+        flags = jax.lax.cond(
+            detm <= LOW_DET_VAL,
+            lambda x: x | 2**4,
+            lambda x: x,
+            flags,
+        )
 
-    idetm = 1.0 / detm
+        idetm = 1.0 / detm
 
-    detw = wrr * wcc - wrc * wrc
-    flags = jax.lax.cond(
-        detw <= LOW_DET_VAL,
-        lambda x: x | 2**4,
-        lambda x: x,
-        flags,
-    )
+        detw = wrr * wcc - wrc * wrc
+        flags = jax.lax.cond(
+            detw <= LOW_DET_VAL,
+            lambda x: x | 2**4,
+            lambda x: x,
+            flags,
+        )
 
-    idetw = 1.0 / detw
+        idetw = 1.0 / detw
 
-    # Nrr etc. are actually of the inverted covariance matrix
-    nrr = icc * idetm - wcc * idetw
-    ncc = irr * idetm - wrr * idetw
-    nrc = -irc * idetm + wrc * idetw
-    detn = nrr * ncc - nrc * nrc
-    flags = jax.lax.cond(
-        detn <= LOW_DET_VAL,
-        lambda x: x | 2**4,
-        lambda x: x,
-        flags,
-    )
+        # Nrr etc. are actually of the inverted covariance matrix
+        nrr = icc * idetm - wcc * idetw
+        ncc = irr * idetm - wrr * idetw
+        nrc = -irc * idetm + wrc * idetw
+        detn = nrr * ncc - nrc * nrc
+        flags = jax.lax.cond(
+            detn <= LOW_DET_VAL,
+            lambda x: x | 2**4,
+            lambda x: x,
+            flags,
+        )
 
-    # now set from the inverted matrix
-    idetn = 1.0 / detn
-    irr_dw = ncc * idetn
-    icc_dw = nrr * idetn
-    irc_dw = -nrc * idetn
-    return irr_dw, irc_dw, icc_dw, flags
+        # now set from the inverted matrix
+        idetn = 1.0 / detn
+        irr_dw = ncc * idetn
+        icc_dw = nrr * idetn
+        irc_dw = -nrc * idetn
+        return irr_dw, irc_dw, icc_dw, flags
 
 
 def compute_moments_admom_obs(mompars, admom_obs: AdMomObs):
