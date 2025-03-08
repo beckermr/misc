@@ -1,9 +1,14 @@
 """utilities for conda oci work."""
 import re
 
+from conda.models.version import VersionOrder
+
 # see https://github.com/opencontainers/distribution-spec/blob/main/spec.md#pulling-manifests
 VALID_NAME_RE = re.compile(r"^[a-z0-9]+((\.|_|__|-+)[a-z0-9]+)*(\/[a-z0-9]+((\.|_|__|-+)[a-z0-9]+)*)*$")
 VALID_TAG_RE = re.compile(r"^[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}$")
+
+# see conda/schemas
+VALID_CONDA_NAME_RE = re.compile(r"^(([a-z0-9])|([a-z0-9_](?!_)))[._-]?([a-z0-9]+(\.|-|_|$))*$")
 
 
 def encode_name_to_oci(name):
@@ -88,6 +93,27 @@ def is_valid_oci_dist(dist):
         return False
 
     if not VALID_NAME_RE.match(name):
+        return False
+
+    return True
+
+
+def is_valid_conda_dist(dist):
+    """Check if a conda dist is valid."""
+
+    if dist.endswith(".tar.bz2"):
+        dist = dist[:-8]
+    elif dist.endswith(".conda"):
+        dist = dist[:-6]
+
+    name, ver, build = dist.rsplit("-", maxsplit=2)
+
+    if not VALID_CONDA_NAME_RE.match(name):
+        return False
+
+    try:
+        VersionOrder(ver)
+    except Exception:
         return False
 
     return True
