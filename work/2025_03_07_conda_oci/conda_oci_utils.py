@@ -90,12 +90,8 @@ def encode_conda_dist_to_oci_dist(dist):
     ver = encode_version_build_to_oci(ver)
     build = encode_version_build_to_oci(build)
 
-    if channel is not None and subdir is not None:
-        prefix = f"{channel}/{subdir}/"
-    else:
-        prefix = ""
-
-    oci_name = prefix + f"{name}"
+    channel_subdir = f"{channel}/{subdir}"
+    oci_name = f"{channel_subdir}/{name}"
     if label is not None:
         oci_tag = f"{label}-{ver}-{build}"
     else:
@@ -103,7 +99,9 @@ def encode_conda_dist_to_oci_dist(dist):
 
     if len(oci_name) > 128 or len(oci_tag) > 128:
         oci_tag = "h" + hashlib.sha1(oci_tag.encode("ascii")).hexdigest()
-        oci_name = prefix + "h" + hashlib.sha1(name.encode("ascii")).hexdigest()
+        oci_name = (
+            channel_subdir + "/h" + hashlib.sha1(name.encode("ascii")).hexdigest()
+        )
 
     return f"{oci_name}:{oci_tag}"
 
