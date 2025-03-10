@@ -2,11 +2,12 @@ from conda_oci_utils import (
     encode_underscore_to_oci,
     decode_oci_dist_to_conda_dist,
     decode_underscore_from_oci,
-    encode_version_build_to_oci,
-    decode_version_build_from_oci,
+    encode_label_version_build_to_oci,
+    decode_label_version_build_from_oci,
     encode_conda_dist_to_oci_dist,
     is_valid_conda_dist,
     is_valid_oci_dist,
+    VALID_CONDA_LABEL_RE,
 )
 
 import pytest
@@ -45,11 +46,15 @@ def test_encode_decode_underscore_to_oci(name, ename):
         ("1.0.0+1_1", "1.0.0_P1__1"),
         ("1.0.0+1!1", "1.0.0_P1_N1"),
         ("1.0.0_+1_1", "1.0.0___P1__1"),
+        ("blah:foo/fgh bar\tgoo", "blah_Cfoo_Sfgh_Bbar_Tgoo"),
+        ("blah_\r\n:foo/fgh bar\tgoo", "blah___R_L_Cfoo_Sfgh_Bbar_Tgoo"),
     ],
 )
-def test_encode_decode_version_build_to_oci(vb, ebv):
-    assert encode_version_build_to_oci(vb) == ebv
-    assert decode_version_build_from_oci(ebv) == vb
+def test_encode_decode_label_version_build_to_oci(vb, ebv):
+    assert encode_label_version_build_to_oci(vb) == ebv
+    assert decode_label_version_build_from_oci(ebv) == vb
+    if vb.startswith("blah"):
+        assert VALID_CONDA_LABEL_RE.match(vb) is not None
 
 
 @pytest.mark.parametrize(
@@ -103,6 +108,14 @@ def test_is_valid_oci_dist(dist, is_valid):
             "conda-forge/linux-64/zgdal:test-2.3.3-py27hf242f0b__1",
         ),
         (
+            "conda-forge/test%2Fblah/linux-64/_gdal-2.3.3-py27hf242f0b_1",
+            "conda-forge/linux-64/zgdal:test_Sblah-2.3.3-py27hf242f0b__1",
+        ),
+        (
+            "conda-forge/test/blah/linux-64/_gdal-2.3.3-py27hf242f0b_1",
+            "conda-forge/linux-64/zgdal:test_Sblah-2.3.3-py27hf242f0b__1",
+        ),
+        (
             "conda-forge/linux-64/gdal-2.3.3-py27hf242f0b_1",
             "conda-forge/linux-64/cgdal:2.3.3-py27hf242f0b__1",
         ),
@@ -124,8 +137,14 @@ def test_encode_decode_conda_dist_to_oci_dist(conda_dist, oci_dist):
     assert encode_conda_dist_to_oci_dist(conda_dist) == oci_dist
     assert is_valid_oci_dist(oci_dist)
     assert is_valid_conda_dist(conda_dist)
-    if oci_dist.split("/")[2][0] == "h" or oci_dist.split(":")[1][0] == "h":
+    if oci_dist.split("/")[-1][0] == "h" or oci_dist.split(":")[1][0] == "h":
         with pytest.raises(ValueError):
             decode_oci_dist_to_conda_dist(oci_dist)
     else:
-        assert decode_oci_dist_to_conda_dist(oci_dist) == conda_dist
+        if conda_dist.count("/") == 3:
+            assert decode_oci_dist_to_conda_dist(oci_dist) == conda_dist
+        else:
+            assert (
+                decode_oci_dist_to_conda_dist(oci_dist, urlencode_label=False)
+                == conda_dist
+            )
