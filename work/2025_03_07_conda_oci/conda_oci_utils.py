@@ -1,17 +1,25 @@
 """utilities for conda oci work."""
+
+import hashlib
 import re
 
 from conda.models.version import VersionOrder
 
 # see https://github.com/opencontainers/distribution-spec/blob/main/spec.md#pulling-manifests
-VALID_NAME_RE = re.compile(r"^[a-z0-9]+((\.|_|__|-+)[a-z0-9]+)*(\/[a-z0-9]+((\.|_|__|-+)[a-z0-9]+)*)*$")
+VALID_NAME_RE = re.compile(
+    r"^[a-z0-9]+((\.|_|__|-+)[a-z0-9]+)*(\/[a-z0-9]+((\.|_|__|-+)[a-z0-9]+)*)*$"
+)
 VALID_TAG_RE = re.compile(r"^[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}$")
 
 # see conda/schemas
-VALID_CONDA_NAME_RE = re.compile(r"^(([a-z0-9])|([a-z0-9_](?!_)))[._-]?([a-z0-9]+(\.|-|_|$))*$")
+VALID_CONDA_NAME_RE = re.compile(
+    r"^(([a-z0-9])|([a-z0-9_](?!_)))[._-]?([a-z0-9]+(\.|-|_|$))*$"
+)
+VALID_CONDA_CHANNEL_SUBDIR_RE = re.compile(r"^[a-z0-9]+((-|_|.)[a-z0-9]+)*$")
+VALID_CONDA_LABEL_RE = re.compile(r"^[a-z0-9A-Z]+((-|_|.)[a-z0-9A-Z]+)*$")
 
 
-def encode_name_to_oci(name):
+def encode_underscore_to_oci(name):
     """Encode a conda package name to an OCI image name."""
 
     if name.startswith("_"):
@@ -22,7 +30,7 @@ def encode_name_to_oci(name):
     return name
 
 
-def decode_name_from_oci(name):
+def decode_underscore_from_oci(name):
     """Decode an OCI image name to a conda package name."""
 
     if name.startswith("z"):
@@ -37,8 +45,7 @@ def encode_version_build_to_oci(version_or_build):
     """Encode a conda package version or build string to an OCI image tag."""
 
     return (
-        version_or_build
-        .replace("_", "__")
+        version_or_build.replace("_", "__")
         .replace("+", "_P")
         .replace("!", "_N")
         .replace("=", "_E")
@@ -49,15 +56,14 @@ def decode_version_build_from_oci(version_or_build):
     """Decode an OCI image tag to a conda package version or build string."""
 
     return (
-        version_or_build
-        .replace("_P", "+")
+        version_or_build.replace("_P", "+")
         .replace("_N", "!")
         .replace("_E", "=")
         .replace("__", "_")
     )
 
 
-def encode_conda_dist_to_oci_dist(dist, channel=None, subdir=None):
+def encode_conda_dist_to_oci_dist(dist):
     """Convert a conda package name to an OCI image name."""
 
     if dist.endswith(".tar.bz2"):
@@ -67,7 +73,20 @@ def encode_conda_dist_to_oci_dist(dist, channel=None, subdir=None):
 
     name, ver, build = dist.rsplit("-", maxsplit=2)
 
-    name = encode_name_to_oci(name)
+    name_parts = name.split("/")
+    if len(name_parts) not in [3, 4]:
+        raise ValueError(
+            "channel and subdir information must be "
+            "prepended in the format <channel>/<subdir>"
+            "/<conda dist> or <channel>/<label>/<subdir>/<conda dist>."
+        )
+    if len(name_parts) == 4:
+        channel, label, subdir, name = name_parts
+    else:
+        channel, subdir, name = name_parts
+        label = None
+
+    name = encode_underscore_to_oci(name)
     ver = encode_version_build_to_oci(ver)
     build = encode_version_build_to_oci(build)
 
@@ -76,7 +95,70 @@ def encode_conda_dist_to_oci_dist(dist, channel=None, subdir=None):
     else:
         prefix = ""
 
-    return prefix + f"{name}:{ver}-{build}"
+    oci_name = prefix + f"{name}"
+    if label is not None:
+        oci_tag = f"{label}-{ver}-{build}"
+    else:
+        oci_tag = f"{ver}-{build}"
+
+    if len(oci_name) > 128 or len(oci_tag) > 128:
+        oci_tag = "h" + hashlib.sha1(oci_tag.encode("ascii")).hexdigest()
+        oci_name = prefix + "h" + hashlib.sha1(name.encode("ascii")).hexdigest()
+
+    return f"{oci_name}:{oci_tag}"
+
+
+def decode_oci_dist_to_conda_dist(dist):
+    """Convert an OCI image name to a conda package name."""
+
+    if dist.startswith("oci://"):
+        # assume name is oci://<registry>/<image>:tag
+        # strip out oci:// and the registry
+        dist = dist[6:]
+        dist = dist.split("/", maxsplit=1)[-1]
+
+    name, tag = dist.rsplit(":", maxsplit=1)
+    if tag.startswith("h"):
+        raise ValueError(
+            "OCI dist names with hashed components cannot be "
+            "decoded. Read the image metadata to find the "
+            "conda package name."
+        )
+
+    name_parts = name.split("/")
+    if len(name_parts) != 3:
+        raise ValueError(
+            "channel and subdir information must be "
+            "prepended in the format <channel>/<subdir>"
+            f"/<oci dist>. Got {name} which cannot be interpreted."
+        )
+    channel, subdir, name = name_parts
+    if name.startswith("h"):
+        raise ValueError(
+            "OCI dist names with hashed components cannot be "
+            "decoded. Read the image metadata to find the "
+            "conda package name."
+        )
+
+    name = decode_underscore_from_oci(name)
+    tag_parts = tag.rsplit("-", maxsplit=2)
+    if len(tag_parts) == 3:
+        label, ver, build = tag_parts
+    else:
+        label = None
+        ver, build = tag_parts
+    ver = decode_version_build_from_oci(ver)
+    build = decode_version_build_from_oci(build)
+
+    if channel is not None and subdir is not None:
+        if label is not None:
+            prefix = f"{channel}/{label}/{subdir}/"
+        else:
+            prefix = f"{channel}/{subdir}/"
+    else:
+        prefix = ""
+
+    return prefix + f"{name}-{ver}-{build}"
 
 
 def is_valid_oci_dist(dist):
@@ -107,6 +189,29 @@ def is_valid_conda_dist(dist):
         dist = dist[:-6]
 
     name, ver, build = dist.rsplit("-", maxsplit=2)
+
+    if "/" in name:
+        name_parts = name.split("/")
+        if len(name_parts) not in [3, 4]:
+            return False
+        if len(name_parts) == 4:
+            channel, label, subdir, name = name_parts
+        else:
+            channel, subdir, name = name_parts
+            label = None
+    else:
+        channel = None
+        subdir = None
+        label = None
+
+    if channel is not None and not VALID_CONDA_CHANNEL_SUBDIR_RE.match(channel):
+        return False
+
+    if label is not None and not VALID_CONDA_LABEL_RE.match(label):
+        return False
+
+    if subdir is not None and not VALID_CONDA_CHANNEL_SUBDIR_RE.match(subdir):
+        return False
 
     if not VALID_CONDA_NAME_RE.match(name):
         return False
