@@ -101,19 +101,19 @@ def test_is_valid_oci_dist(dist, is_valid):
     [
         (
             "conda-forge/test/linux-64/gdal-2.3.3-py27hf242f0b_1",
-            "conda-forge/linux-64/cgdal:test-2.3.3-py27hf242f0b__1",
+            "conda-forge/linux-64/cgdal:2.3.3-py27hf242f0b__1-test",
         ),
         (
             "conda-forge/test/linux-64/_gdal-2.3.3-py27hf242f0b_1",
-            "conda-forge/linux-64/zgdal:test-2.3.3-py27hf242f0b__1",
+            "conda-forge/linux-64/zgdal:2.3.3-py27hf242f0b__1-test",
         ),
         (
             "conda-forge/test%2Fblah/linux-64/_gdal-2.3.3-py27hf242f0b_1",
-            "conda-forge/linux-64/zgdal:test_Sblah-2.3.3-py27hf242f0b__1",
+            "conda-forge/linux-64/zgdal:2.3.3-py27hf242f0b__1-test_Sblah",
         ),
         (
             "conda-forge/test/blah/linux-64/_gdal-2.3.3-py27hf242f0b_1",
-            "conda-forge/linux-64/zgdal:test_Sblah-2.3.3-py27hf242f0b__1",
+            "conda-forge/linux-64/zgdal:2.3.3-py27hf242f0b__1-test_Sblah",
         ),
         (
             "conda-forge/linux-64/gdal-2.3.3-py27hf242f0b_1",

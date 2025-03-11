@@ -47,6 +47,7 @@ def encode_label_version_build_to_oci(version_or_build):
 
     return (
         version_or_build.replace("_", "__")
+        .replace("-", "_D")
         .replace("+", "_P")
         .replace("!", "_N")
         .replace("=", "_E")
@@ -72,6 +73,7 @@ def decode_label_version_build_from_oci(version_or_build):
         .replace("_E", "=")
         .replace("_N", "!")
         .replace("_P", "+")
+        .replace("_D", "-")
         .replace("__", "_")
     )
 
@@ -109,7 +111,7 @@ def encode_conda_dist_to_oci_dist(dist):
     channel_subdir = f"{channel}/{subdir}"
     oci_name = f"{channel_subdir}/{name}"
     if label is not None:
-        oci_tag = f"{label}-{ver}-{build}"
+        oci_tag = f"{ver}-{build}-{label}"
     else:
         oci_tag = f"{ver}-{build}"
 
@@ -157,7 +159,7 @@ def decode_oci_dist_to_conda_dist(dist, urlencode_label=True):
     name = decode_underscore_from_oci(name)
     tag_parts = tag.rsplit("-", maxsplit=2)
     if len(tag_parts) == 3:
-        label, ver, build = tag_parts
+        ver, build, label = tag_parts
     else:
         label = None
         ver, build = tag_parts
