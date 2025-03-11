@@ -8,6 +8,7 @@ from conda_oci_utils import (
     is_valid_conda_dist,
     is_valid_oci_dist,
     VALID_CONDA_LABEL_RE,
+    VALID_TAG_RE,
 )
 
 import pytest
@@ -56,6 +57,7 @@ def test_encode_decode_label_version_build_to_oci(vb, ebv):
     assert decode_label_version_build_from_oci(ebv) == vb
     if vb.startswith("blah"):
         assert VALID_CONDA_LABEL_RE.match(vb) is not None
+    assert VALID_TAG_RE.match(ebv) is not None
 
 
 @pytest.mark.parametrize(
