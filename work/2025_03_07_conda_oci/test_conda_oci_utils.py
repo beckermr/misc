@@ -18,14 +18,14 @@ import pytest
     "name,ename",
     [
         ("foo", "cfoo"),
-        ("_foo", "zfoo"),
+        ("_foo", "c_foo"),
         ("bar", "cbar"),
-        ("_bar", "zbar"),
+        ("_bar", "c_bar"),
         ("zbar", "czbar"),
         ("z_bar", "cz_bar"),
-        ("_zbar", "zzbar"),
-        ("_z_bar", "zz_bar"),
-        ("_foo_bar", "zfoo_bar"),
+        ("_zbar", "c_zbar"),
+        ("_z_bar", "c_z_bar"),
+        ("_foo_bar", "c_foo_bar"),
         ("foo_bar", "cfoo_bar"),
         ("foo_zbar", "cfoo_zbar"),
         ("foo_z_bar", "cfoo_z_bar"),
@@ -70,7 +70,7 @@ def test_encode_decode_label_version_build_to_oci(vb, ebv):
         ("foo-1.0.0=1-h34243_0.tar.bz2", "cfoo:1.0.0_E1-h34243_U0"),
         ("foo-1.0.0+1_1-h34243_0", "cfoo:1.0.0_P1_U1-h34243_U0"),
         ("foo-1.0.0+1!1-h34243_0", "cfoo:1.0.0_P1_N1-h34243_U0"),
-        ("_foo-1.0.0_+1_1-h34243_0", "zfoo:1.0.0_U_P1_U1-h34243_U0"),
+        ("_foo-1.0.0_+1_1-h34243_0", "c_foo:1.0.0_U_P1_U1-h34243_U0"),
         ("cfoo-1.0.0_+1_1-h34243_0", "ccfoo:1.0.0_U_P1_U1-h34243_U0"),
         ("z_foo-1.0.0_+1_1-h34243_0", "cz_foo:1.0.0_U_P1_U1-h34243_U0"),
         ("cz_foo-1.0.0_+1_1-h34243_0", "ccz_foo:1.0.0_U_P1_U1-h34243_U0"),
@@ -108,15 +108,15 @@ def test_is_valid_oci_dist(dist, is_valid):
         ),
         (
             "conda-forge/test/linux-64/_gdal-2.3.3-py27hf242f0b_1",
-            "conda-forge/linux-64/zgdal:2.3.3-py27hf242f0b_U1-test",
+            "conda-forge/linux-64/c_gdal:2.3.3-py27hf242f0b_U1-test",
         ),
         (
             "conda-forge/test%2Fblah/linux-64/_gdal-2.3.3-py27hf242f0b_1",
-            "conda-forge/linux-64/zgdal:2.3.3-py27hf242f0b_U1-test_Sblah",
+            "conda-forge/linux-64/c_gdal:2.3.3-py27hf242f0b_U1-test_Sblah",
         ),
         (
             "conda-forge/test/blah/linux-64/_gdal-2.3.3-py27hf242f0b_1",
-            "conda-forge/linux-64/zgdal:2.3.3-py27hf242f0b_U1-test_Sblah",
+            "conda-forge/linux-64/c_gdal:2.3.3-py27hf242f0b_U1-test_Sblah",
         ),
         (
             "conda-forge/linux-64/gdal-2.3.3-py27hf242f0b_1",
@@ -124,7 +124,7 @@ def test_is_valid_oci_dist(dist, is_valid):
         ),
         (
             "conda-forge/linux-64/_gdal-2.3.3-py27hf242f0b_1",
-            "conda-forge/linux-64/zgdal:2.3.3-py27hf242f0b_U1",
+            "conda-forge/linux-64/c_gdal:2.3.3-py27hf242f0b_U1",
         ),
         (
             "conda-forge/linux-64/" + "g" * 300 + "-2.3.3-py27hf242f0b_1",

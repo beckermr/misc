@@ -22,24 +22,12 @@ VALID_CONDA_LABEL_RE = re.compile(r"^[a-zA-Z][0-9a-zA-Z_\-\.\/:\s]*")
 
 def encode_underscore_to_oci(name):
     """Encode a conda package name to an OCI image name."""
-
-    if name.startswith("_"):
-        name = "z" + name[1:]
-    else:
-        name = "c" + name
-
-    return name
+    return "c" + name
 
 
 def decode_underscore_from_oci(name):
     """Decode an OCI image name to a conda package name."""
-
-    if name.startswith("z"):
-        name = "_" + name[1:]
-    elif name.startswith("c"):
-        name = name[1:]
-
-    return name
+    return name[1:]
 
 
 def encode_label_version_build_to_oci(version_or_build):
