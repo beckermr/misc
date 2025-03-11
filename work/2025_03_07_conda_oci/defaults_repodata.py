@@ -32,7 +32,6 @@ DEFAULTS_CHANNELS = ["main", "msys2", "r"]
 
 @lru_cache(maxsize=128)
 def all_labels(channel) -> List[str]:
-
     if True:
         r = requests.get(f"https://anaconda.org/{channel}/repo")
         r.raise_for_status()
