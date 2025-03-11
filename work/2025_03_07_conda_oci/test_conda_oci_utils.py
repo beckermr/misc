@@ -48,6 +48,7 @@ def test_encode_decode_underscore_to_oci(name, ename):
         ("1.0.0_+1_1", "1.0.0___P1__1"),
         ("blah:foo/fgh bar\tgoo", "blah_Cfoo_Sfgh_Bbar_Tgoo"),
         ("blah_\r\n:foo/fgh bar\tgoo", "blah___R_L_Cfoo_Sfgh_Bbar_Tgoo"),
+        ("blah:fo-o/fgh bar\tgoo", "blah_Cfo_Do_Sfgh_Bbar_Tgoo"),
     ],
 )
 def test_encode_decode_label_version_build_to_oci(vb, ebv):
