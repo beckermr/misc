@@ -34,7 +34,7 @@ def encode_label_version_build_to_oci(version_or_build):
     """Encode a conda package version or build string to an OCI image tag."""
 
     return (
-        version_or_build.replace("_", "__")
+        version_or_build.replace("_", "_U")
         .replace("-", "_D")
         .replace("+", "_P")
         .replace("!", "_N")
@@ -62,7 +62,7 @@ def decode_label_version_build_from_oci(version_or_build):
         .replace("_N", "!")
         .replace("_P", "+")
         .replace("_D", "-")
-        .replace("__", "_")
+        .replace("_U", "_")
     )
 
 
