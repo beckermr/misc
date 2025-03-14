@@ -2,7 +2,6 @@
 
 import hashlib
 import re
-import urllib.parse
 
 from conda.models.version import VersionOrder
 
@@ -13,69 +12,41 @@ VALID_NAME_RE = re.compile(
 VALID_TAG_RE = re.compile(r"^[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}$")
 
 # see conda/schemas
-VALID_CONDA_NAME_RE = re.compile(
-    r"^(([a-z0-9])|([a-z0-9_](?!_)))[._-]?([a-z0-9]+(\.|-|_|$))*$"
-)
-VALID_CONDA_CHANNEL_SUBDIR_RE = re.compile(r"^[a-z0-9]+((-|_|.)[a-z0-9]+)*$")
+VALID_CONDA_PKG_NAME_RE = re.compile(r"^(([a-z0-9])|([a-z0-9_](?!_)))[._-]?([a-z0-9]+(\.|-|_|$))*$")
+VALID_CONDA_CHANNEL_RE = re.compile(r"^[a-z0-9]+((-|_|.)[a-z0-9]+)*$")
+VALID_CONDA_SUBDIR_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 VALID_CONDA_LABEL_RE = re.compile(r"^[a-zA-Z][0-9a-zA-Z_\-\.\/:\s]*")
+VALID_CONDA_BUILD_STRING_RE = re.compile(r"^[a-zA-Z0-9_\.+]+$")
 
 
-def encode_underscore_to_oci(name):
+def encode_pkg_to_oci(name):
     """Encode a conda package name to an OCI image name."""
     return "c" + name
 
 
-def decode_underscore_from_oci(name):
+def decode_pkg_from_oci(name):
     """Decode an OCI image name to a conda package name."""
     return name[1:]
 
 
-def encode_label_version_build_to_oci(version_or_build):
+def encode_version_build_to_oci(version_or_build):
     """Encode a conda package version or build string to an OCI image tag."""
-
     return (
-        version_or_build.replace("_", "_U")
-        .replace("-", "_D")
+        version_or_build
+        .replace("_", "__")
         .replace("+", "_P")
         .replace("!", "_N")
-        .replace("=", "_E")
-        .replace(":", "_C")
-        .replace("/", "_S")
-        .replace(" ", "_B")
-        .replace("\t", "_T")
-        .replace("\r", "_R")
-        .replace("\n", "_L")
     )
 
 
-def decode_label_version_build_from_oci(version_or_build):
+def decode_version_build_from_oci(version_or_build):
     """Decode an OCI image tag to a conda package version or build string."""
-
     return (
-        version_or_build.replace("_L", "\n")
-        .replace("_R", "\r")
-        .replace("_T", "\t")
-        .replace("_B", " ")
-        .replace("_S", "/")
-        .replace("_C", ":")
-        .replace("_E", "=")
+        version_or_build
         .replace("_N", "!")
         .replace("_P", "+")
-        .replace("_D", "-")
-        .replace("_U", "_")
+        .replace("__", "_")
     )
-
-
-def _split_channel_label_subdir_name(channel_label_subdir_name):
-    channel_label_subdir, name = channel_label_subdir_name.rsplit("/", maxsplit=1)
-    channel, label_subdir = channel_label_subdir.split("/", maxsplit=1)
-    res = label_subdir.rsplit("/", maxsplit=1)
-    if len(res) == 2:
-        label, subdir = res
-    else:
-        label = None
-        subdir = res[0]
-    return channel, label, subdir, name
 
 
 def encode_conda_dist_to_oci_dist(dist):
@@ -87,21 +58,15 @@ def encode_conda_dist_to_oci_dist(dist):
         dist = dist[:-6]
 
     name, ver, build = dist.rsplit("-", maxsplit=2)
-    channel, label, subdir, name = _split_channel_label_subdir_name(name)
+    channel, subdir, name = name.rsplit("/", maxsplit=2)
 
-    name = encode_underscore_to_oci(name)
-    ver = encode_label_version_build_to_oci(ver)
-    build = encode_label_version_build_to_oci(build)
-    if label:
-        label = urllib.parse.unquote(label)
-        label = encode_label_version_build_to_oci(label)
+    name = encode_pkg_to_oci(name)
+    ver = encode_version_build_to_oci(ver)
+    build = encode_version_build_to_oci(build)
 
     channel_subdir = f"{channel}/{subdir}"
     oci_name = f"{channel_subdir}/{name}"
-    if label is not None:
-        oci_tag = f"{ver}-{build}-{label}"
-    else:
-        oci_tag = f"{ver}-{build}"
+    oci_tag = f"{ver}-{build}"
 
     if len(oci_name) > 128 or len(oci_tag) > 128:
         oci_tag = "h" + hashlib.sha1(oci_tag.encode("ascii")).hexdigest()
@@ -129,7 +94,7 @@ def decode_oci_dist_to_conda_dist(dist, urlencode_label=True):
             "conda package name."
         )
 
-    name_parts = name.split("/")
+    name_parts = name.rsplit("/", maxsplit=2)
     if len(name_parts) != 3:
         raise ValueError(
             "channel and subdir information must be "
@@ -144,29 +109,33 @@ def decode_oci_dist_to_conda_dist(dist, urlencode_label=True):
             "conda package name."
         )
 
-    name = decode_underscore_from_oci(name)
-    tag_parts = tag.rsplit("-", maxsplit=2)
-    if len(tag_parts) == 3:
-        ver, build, label = tag_parts
-    else:
-        label = None
-        ver, build = tag_parts
-    ver = decode_label_version_build_from_oci(ver)
-    build = decode_label_version_build_from_oci(build)
-    if label:
-        label = decode_label_version_build_from_oci(label)
-        if urlencode_label:
-            label = urllib.parse.quote(label, safe="")
+    name = decode_pkg_from_oci(name)
+    ver, build = tag.rsplit("-", maxsplit=2)
+    ver = decode_version_build_from_oci(ver)
+    build = decode_version_build_from_oci(build)
 
     if channel is not None and subdir is not None:
-        if label is not None:
-            prefix = f"{channel}/{label}/{subdir}/"
-        else:
-            prefix = f"{channel}/{subdir}/"
+        prefix = f"{channel}/{subdir}/"
     else:
         prefix = ""
 
     return prefix + f"{name}-{ver}-{build}"
+
+
+def separate_channel_label(channel_label):
+    parts = channel_label.split("/")
+    if any(part == "label" for part in parts) and parts[-1] != "label":
+        # get last index of part that is "label"
+        for i, part in enumerate(parts):
+            if part == "label":
+                label_index = i
+        channel = "/".join(parts[:label_index])
+        label = "/".join(parts[label_index + 1 :])
+    else:
+        channel = channel_label
+        label = None
+
+    return channel, label
 
 
 def is_valid_oci_dist(dist):
@@ -198,22 +167,29 @@ def is_valid_conda_dist(dist):
 
     name, ver, build = dist.rsplit("-", maxsplit=2)
     if "/" in name:
-        channel, label, subdir, name = _split_channel_label_subdir_name(name)
+        channel, subdir, name = name.rsplit("/", maxsplit=2)
     else:
         channel = None
-        label = None
         subdir = None
 
-    if channel is not None and not VALID_CONDA_CHANNEL_SUBDIR_RE.match(channel):
+    if channel is not None:
+        channel, label = separate_channel_label(channel)
+    else:
+        label = None
+
+    if channel is not None and not VALID_CONDA_CHANNEL_RE.match(channel):
         return False
 
     if label is not None and not VALID_CONDA_LABEL_RE.match(label):
         return False
 
-    if subdir is not None and not VALID_CONDA_CHANNEL_SUBDIR_RE.match(subdir):
+    if subdir is not None and not VALID_CONDA_SUBDIR_RE.match(subdir):
         return False
 
-    if not VALID_CONDA_NAME_RE.match(name):
+    if not VALID_CONDA_PKG_NAME_RE.match(name):
+        return False
+
+    if not VALID_CONDA_BUILD_STRING_RE.match(build):
         return False
 
     try:
