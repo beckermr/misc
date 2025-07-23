@@ -106,7 +106,7 @@ class BandSeasonTotVisits(maf.metrics.vector_metrics.VectorMetric):
         return res
 
 
-def _process_file(filename, psqy, use_maf_season_calc):
+def _process_file(filename, psqy, use_maf_season_calc, force_remake=False):
     nside = 128
     band = "i"
     runname = os.path.basename(filename).replace('.db', '')
@@ -115,7 +115,7 @@ def _process_file(filename, psqy, use_maf_season_calc):
         f"_band{band}_nside{nside}.fits"
     )
 
-    if not os.path.exists(oname):
+    if (not os.path.exists(oname)) or force_remake:
         print(
             "starting %s w/ ps. quarter years = %s use maf = %s" % (
                 os.path.basename(filename),
@@ -132,7 +132,13 @@ def _process_file(filename, psqy, use_maf_season_calc):
         )
 
         slicer = maf.HealpixSlicer(nside=nside, use_cache=False)
-        sql = 'note not like "%%DD%%" and night <= 3653 '
+        col = "note"
+        sql = (
+            col + ' not like "%%DD%%" and '
+            + col + ' not like "%%twilight%%" and '
+            + col + ' not like "ToO%%" and '
+            + 'night <= 3653 '
+        )
         bundle = maf.MetricBundle(metric, slicer, sql, run_name=runname)
         bg = maf.MetricBundleGroup([bundle], filename, '.', None)
         bg.run_all()
@@ -148,6 +154,8 @@ def _process_file(filename, psqy, use_maf_season_calc):
 
 
 def main():
+    force_remake = True
+
     fnames = glob.glob(
         os.path.expandvars(
             os.path.join(
@@ -172,11 +180,11 @@ def main():
     for fname in fnames:
         for psqy in [-1, 0, 1, 2]:
             jobs.append(
-                joblib.delayed(_process_file)(fname, psqy, False)
+                joblib.delayed(_process_file)(fname, psqy, False, force_remake=force_remake)
             )
 
         jobs.append(
-            joblib.delayed(_process_file)(fname, 0, True)
+            joblib.delayed(_process_file)(fname, 0, True, force_remake=force_remake)
         )
 
     print("running %d jobs" % len(jobs), flush=True)

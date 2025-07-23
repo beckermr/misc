@@ -130,7 +130,7 @@ class RIZDetectionCoaddExposureTime(maf.metrics.vector_metrics.VectorMetric):
         return res
 
 
-def _process_file(filename):
+def _process_file(filename, force_remake=False):
     nside = 128
     nbins = 40
     bins = np.linspace(0, 3653, nbins+1)
@@ -138,7 +138,7 @@ def _process_file(filename):
     runname = os.path.basename(filename).replace('.db', '')
     oname = runname + "_nside%d_bins%d.fits" % (nside, nbins)
 
-    if not os.path.exists(oname):
+    if (not os.path.exists(oname)) or force_remake:
         print("starting %s" % os.path.basename(filename), flush=True)
 
         metric = RIZDetectionCoaddExposureTime(bins=bins)
@@ -149,7 +149,12 @@ def _process_file(filename):
             if any(old_ver in filename for old_ver in ["v2", "v3.0", "v3.1", "v3.2", "v3.3", "v3.4"])
             else "scheduler_note"
         )
-        sql = col + ' not like "%%DD%%" and night <= 3653'
+        sql = (
+            col + ' not like "%%DD%%" and '
+            + col + ' not like "%%twilight%%" and '
+            + col + ' not like "ToO%%" and '
+            + 'night <= 3653'
+        )
         bundle = maf.MetricBundle(metric, slicer, sql, run_name=runname)
         bg = maf.MetricBundleGroup([bundle], filename, '.', None)
         bg.run_all()
@@ -165,6 +170,8 @@ def _process_file(filename):
 
 
 def main():
+    force_remake = True
+
     fnames = glob.glob(
         os.path.expandvars(
             os.path.join(
@@ -186,7 +193,7 @@ def main():
         if any(fname.endswith(sim) for sim in sims)
     ]
     jobs = [
-        joblib.delayed(_process_file)(fname)
+        joblib.delayed(_process_file)(fname, force_remake=force_remake)
         for fname in fnames
     ]
 
