@@ -132,7 +132,11 @@ def _process_file(filename, psqy, use_maf_season_calc, force_remake=False):
         )
 
         slicer = maf.HealpixSlicer(nside=nside, use_cache=False)
-        col = "note"
+        col = (
+            "note"
+            if any(old_ver in filename for old_ver in ["v2", "v3.0", "v3.1", "v3.2", "v3.3", "v3.4"])
+            else "scheduler_note"
+        )
         sql = (
             col + ' not like "%%DD%%" and '
             + col + ' not like "%%twilight%%" and '
