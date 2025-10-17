@@ -121,3 +121,5 @@ venv.bak/
 *.pem
 *.cert
 *.p12
+
+.vscode/
