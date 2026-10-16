@@ -123,3 +123,5 @@ venv.bak/
 *.p12
 
 .vscode/
+
+work/2026_07_21_uniform_rolling_desi/rubin_sim_repo/
